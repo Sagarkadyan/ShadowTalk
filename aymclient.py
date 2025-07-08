@@ -26,25 +26,26 @@ with open("public.pem", "rb") as f:
 with open("private.pem", "rb") as f:
     private_key_own = rsa.PrivateKey.load_pkcs1(f.read())
 
-def send_public_key(sock, public_key):
+def send_username_and_public_key(sock, username, public_key_own):
     """
-    Sends the PEM-encoded public key over the given socket.
+    Send your username and PEM-encoded public key to the server.
     """
-    pem = public_key.save_pkcs1("PEM")
-    key_length = len(pem)
-    # First send 4 bytes (big endian) indicating length
-    sock.sendall(key_length.to_bytes(4, byteorder='big'))
-    # Send the PEM bytes
-    sock.sendall(pem)
+    payload = f"{username}|".encode("utf-8") + public_key_own.save_pkcs1("PEM")
+    length = len(payload)
+    sock.sendall(length.to_bytes(4, "big"))  # send length
+    sock.sendall(payload)  # send username|PEM
 
-def receive_public_key(sock):
+def request_user_public_key(sock, target_username):
     """
-    Receives a PEM-encoded public key from the given socket.
+    Request the public key of another user from the server.
     """
-    # First receive 4 bytes indicating length
+    request = f"GET_KEY|{target_username}".encode("utf-8")
+    length = len(request)
+    sock.sendall(length.to_bytes(4, "big"))
+    sock.sendall(request)
+    # Receive key length and then key
     key_length_bytes = sock.recv(4)
-    key_length = int.from_bytes(key_length_bytes, byteorder='big')
-    # Now receive the PEM-encoded key
+    key_length = int.from_bytes(key_length_bytes, "big")
     pem = b''
     while len(pem) < key_length:
         chunk = sock.recv(key_length - len(pem))
@@ -69,23 +70,17 @@ def receive():
           break
 
 username = input("Enter your username: ")
-username_encoded = username.encode(FORMAT)
-username_length = str(len(username_encoded)).encode(FORMAT)
-username_length += b' ' * (HEADER - len(username_length))
-client.send(username_length)
-client.send(username_encoded)
 
 threading.Thread(target=receive, daemon=True).start()
 
 
-
-message = "hello"
+'''
 encrypted_message = rsa.encrypt(message.encode(),public_key_received)
 print(encrypted_message)
 #the Received_encrypted message is received from server 
 clear_message = rsa.decrypt(Received_encrypted_message,private_key_own)
 print(clear_message.decode())
-
+'''
 
 
 
@@ -99,7 +94,7 @@ while True:
         client.send(send_msg)
         break
     
-    message = msg.encode(FORMAT)
+    message = rsa.encrypt(msg.encode(),public_key_own)
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
