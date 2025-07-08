@@ -26,6 +26,32 @@ with open("public.pem", "rb") as f:
 with open("private.pem", "rb") as f:
     private_key_own = rsa.PrivateKey.load_pkcs1(f.read())
 
+def send_public_key(sock, public_key):
+    """
+    Sends the PEM-encoded public key over the given socket.
+    """
+    pem = public_key.save_pkcs1("PEM")
+    key_length = len(pem)
+    # First send 4 bytes (big endian) indicating length
+    sock.sendall(key_length.to_bytes(4, byteorder='big'))
+    # Send the PEM bytes
+    sock.sendall(pem)
+
+def receive_public_key(sock):
+    """
+    Receives a PEM-encoded public key from the given socket.
+    """
+    # First receive 4 bytes indicating length
+    key_length_bytes = sock.recv(4)
+    key_length = int.from_bytes(key_length_bytes, byteorder='big')
+    # Now receive the PEM-encoded key
+    pem = b''
+    while len(pem) < key_length:
+        chunk = sock.recv(key_length - len(pem))
+        if not chunk:
+            raise ConnectionError("Socket closed during key receive")
+        pem += chunk
+    return rsa.PublicKey.load_pkcs1(pem)
 
 def receive():
     while True:
