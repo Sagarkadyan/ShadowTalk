@@ -15,6 +15,9 @@ server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server.bind(ADDR)
 
 
+
+
+
 def send_with_header(conn, text):
     msg = text.encode(FORMAT)
     msg_length = str(len(msg)).encode(FORMAT)
@@ -26,8 +29,11 @@ def send_with_header(conn, text):
 def handle_client(conn, addr):
     username_length = int(conn.recv(HEADER).decode(FORMAT).strip())
     username = conn.recv(username_length).decode(FORMAT)
+    client_public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
+    client_public_key=conn.recv(client_public_key_length).decode(FORMAT)
     client[username] = conn
     print(f"[new connection] {addr} connected as {username}.")
+    print(f"key recived of {username} key {client_public_key}")
     connected = True
     while connected:
         try:

@@ -2,6 +2,7 @@ import socket
 import threading
 import os
 import sys
+import rsa
 
 HEADER = 64
 PORT = 9999

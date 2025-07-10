@@ -26,6 +26,8 @@ with open("public.pem", "rb") as f:
 with open("private.pem", "rb") as f:
     private_key_own = rsa.PrivateKey.load_pkcs1(f.read())
 
+
+'''
 def send_username_and_public_key(sock, username, public_key_own):
     """
     Send your username and PEM-encoded public key to the server.
@@ -53,7 +55,7 @@ def request_user_public_key(sock, target_username):
             raise ConnectionError("Socket closed during key receive")
         pem += chunk
     return rsa.PublicKey.load_pkcs1(pem)
-
+'''
 def receive():
     while True:
         try:
@@ -70,22 +72,25 @@ def receive():
           break
 
 username = input("Enter your username: ")
+username_encoded = username.encode(FORMAT)
+username_length = str(len(username_encoded)).encode(FORMAT)
+username_length += b' ' * (HEADER - len(username_length))
+client.send(username_length)
+client.send(username_encoded)
+key_encoded = public_key_own.save_pkcs1(format='PEM')
+key_length =str(len(key_encoded)).encode(FORMAT)       
+key_length += b' '  * (HEADER - len(key_length))
+client.send(key_length)
+client.send(key_encoded)
 
 threading.Thread(target=receive, daemon=True).start()
 
 
-
-encrypted_message = rsa.encrypt(message.encode(),public_key_received)
-print(encrypted_message)
-#the Received_encrypted message is received from server 
-clear_message = rsa.decrypt(Received_encrypted_message,private_key_own)
-print(clear_message.decode())
-
-
-
-
 while True:
-    msg = input("Format: recipient:message\n")
+    username1=input("write the rexipent name")
+    username1= username1.encode(FORMAT)
+    msg = input("enter the message\n")
+
     if msg == DISCONNECTED_MSG:
         send_msg = DISCONNECTED_MSG.encode(FORMAT)
         send_length = str(len(send_msg)).encode(FORMAT)
