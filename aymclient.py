@@ -1,4 +1,4 @@
-'''import rsa
+import rsa
 import socket
 import threading
 
@@ -12,13 +12,13 @@ ADDR =(SERVER,PORT)
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
-# Only run this part once to generate new key files
-''''''public_key, private_key = rsa.newkeys(1024)
+''' Only run this part once to generate new key files
+public_key, private_key = rsa.newkeys(1024)
 with open("public.pem", "wb") as f:
     f.write(public_key.save_pkcs1("PEM"))
 with open("private.pem", "wb") as f:
     f.write(private_key.save_pkcs1("PEM"))
-''''''
+'''
 # Now read the keys back (make sure files exist and are correct)
 with open("public.pem", "rb") as f:
     public_key_own = rsa.PublicKey.load_pkcs1(f.read())
@@ -100,7 +100,8 @@ while True:
     send_length += b' ' * (HEADER - len(send_length))
     client.send(send_length)
     client.send(message)
-client.close()'''
+client.close()
+'''
 
 
 
@@ -217,3 +218,4 @@ while True:
     client.send(encrypted_message)
 
 client.close()
+'''
