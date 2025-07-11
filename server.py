@@ -29,8 +29,12 @@ def send_with_header(conn, text):
 def handle_client(conn, addr):
     username_length = int(conn.recv(HEADER).decode(FORMAT).strip())
     username = conn.recv(username_length).decode(FORMAT)
-    client_public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
-    client_public_key=conn.recv(client_public_key_length).decode(FORMAT)
+    # Receive and store client's public key
+    public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
+    public_key_pem = conn.recv(public_key_length)
+    client_keys[username] = public_key_pem  # Store raw PEM
+    print(f"[+] Stored public key for {username}")
+
     client[username] = conn
     print(f"[new connection] {addr} connected as {username}.")
     print(f"key recived of {username} key {client_public_key}")
@@ -50,6 +54,17 @@ def handle_client(conn, addr):
             if ":" in msg:
                 recipient, actual_msg = msg.split(":", 1)
                 if recipient in client:
+                    # Step 1: Send recipient's public key to sender
+
+                    recipient_key = client_keys[recipient]
+                    recipient_key_length = str(len(recipient_key)).encode(FORMAT)
+                    conn.send(recipient_key_length.ljust(HEADER))
+                    conn.send(recipient_key)
+                else :
+                    conn.send("0".encode(FORMAT).ljust(HEADER))
+                    print(f"[!] No key for recipient {recipient}")
+                    continue  # Skip sending message if recipient has no key
+
                     try:
                         full_msg = f"[{username}] {actual_msg}".encode(FORMAT)
                         length = str(len(full_msg)).encode(FORMAT)
@@ -60,8 +75,7 @@ def handle_client(conn, addr):
                     except Exception as e:
                         print(f"Error sending to {recipient}: {e}")
                         send_with_header(conn, "Failed to send")
-                else:
-                   send_with_header(conn, "recipetent not found.")
+            
                    
                        
             else:
