@@ -1,7 +1,7 @@
 import socket
- 
+import 
 import threading
-HEADER = 128
+HEADER = 64
 PORT =9999
 FORMAT ="utf-8"
 
@@ -29,12 +29,14 @@ def send_with_header(conn, text):
 
 
 def handle_client(conn, addr):
+    username = None 
     try:
-        username_length = int(conn.recv(HEADER).decode(FORMAT).strip())
-        username = conn.recv(username_length).decode(FORMAT)
+        username_length = int(recv_exact(conn,HEADER).decode(FORMAT).strip())
+        username = recv_exact(conn,username_length).decode(FORMAT)
 
-        public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
-        public_key_pem = conn.recv(public_key_length)
+        public_key_length = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
+        public_key_pem = recv_exact(conn, public_key_length)
+
 
         clients[username] = conn
         client_keys[username] = public_key_pem
@@ -44,7 +46,7 @@ def handle_client(conn, addr):
 
         connected = True
         while connected:
-            msg_length_raw = conn.recv(HEADER)
+            msg_length_raw = recv_exact(conn,HEADER)
             if not msg_length_raw:
                 break
             msg_length = int(msg_length_raw.decode(FORMAT).strip())
@@ -78,7 +80,7 @@ def handle_client(conn, addr):
 
                 # Step 2: Wait for encrypted message from sender
                 encrypted_msg_len = int(conn.recv(HEADER).decode(FORMAT).strip())
-                encrypted_msg = conn.recv(encrypted_msg_len)
+                encrypted_msg = recv_exact(conn,encrypted_msg_len)
 
                 # Step 3: Forward to recipient
                 clients[recipient].send(HEADER.to_bytes(1, 'big') * HEADER)  # dummy header
@@ -95,11 +97,20 @@ def handle_client(conn, addr):
 
     finally:
         conn.close()
-        if username in clients:
+        if username and username in clients:
             del clients[username]
-        if username in client_keys:
+        if username and username in client_keys:
             del client_keys[username]
         print(f"[Cleanup] Removed {username}")
+
+def recv_exact(conn, num_bytes):
+    data = b""
+    while len(data) < num_bytes:
+        chunk = conn.recv(num_bytes - len(data))
+        if not chunk:
+            raise ConnectionError("Connection closed during recv_exact")
+        data += chunk
+    return data
 
 
 def start():
