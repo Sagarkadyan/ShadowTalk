@@ -1,5 +1,5 @@
 import socket
-import 
+
 import threading
 HEADER = 64
 PORT =9999
@@ -83,8 +83,11 @@ def handle_client(conn, addr):
                 encrypted_msg = recv_exact(conn,encrypted_msg_len)
 
                 # Step 3: Forward to recipient
-                clients[recipient].send(HEADER.to_bytes(1, 'big') * HEADER)  # dummy header
+                # Send real header and encrypted message
+                msg_len_encoded = str(len(encrypted_msg)).encode(FORMAT).ljust(HEADER)
+                clients[recipient].send(msg_len_encoded)
                 clients[recipient].send(encrypted_msg)
+
                 send_with_header(conn, "Message sent.")
                 print(f"[MSG] {username} ➜ {recipient}")
 

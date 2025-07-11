@@ -39,24 +39,21 @@ def recv_exact(sock, num_bytes):
 
 def receive():
     while True:
+        
         try:
-            # Step 1: Read the header (length of encrypted message)
-            msg_length_raw = recv_exact(client, HEADER)
+            msg_length_raw = recv_exact(client,HEADER)
+            if not msg_length_raw:
+                break
             msg_length = int(msg_length_raw.decode(FORMAT).strip())
             if msg_length == 0:
                 continue
 
-            # Step 2: Receive encrypted message as raw bytes
-            encrypted_msg = recv_exact(client, msg_length)
-
-            # Step 3: Decrypt using your private key
-            decrypted = rsa.decrypt(encrypted_msg, private_key_own).decode(FORMAT)
-
+            decrypted = rsa.decrypt(msg, private_key_own).decode(FORMAT)
             print(f"\n[Decrypted Message]: {decrypted}")
-        except Exception as e:
-            print("Connection closed or error:", e)
-            break
 
+        except Exception as e:
+          print("Connection closed or error:", e)
+          break
 
 username = input("Enter your username: ")
 username_encoded = username.encode(FORMAT)
@@ -90,18 +87,7 @@ while True:
         time.time.sleep(0.05)
         client.send(send_msg)
         break
-  
-  
-    if not username1 or not msg:
-     print("[!] Recipient name or message is empty.")
-     continue  # Skip and prompt again
-
-
-    # Step 1: Send plaintext recipient:message string
-    full_message = f"{username1.decode(FORMAT)}:{msg}"
-    full_encoded = full_message.encode(FORMAT)
-    client.send(str(len(full_encoded)).encode(FORMAT).ljust(HEADER))
-    client.send(full_encoded)
+    
 
    # Receive the length of the other user's public key
     otherkey_length = int(recv_exact(client,HEADER).decode(FORMAT).strip())
@@ -116,10 +102,10 @@ while True:
     # Convert PEM bytes to PublicKey object
     other_public_key = rsa.PublicKey.load_pkcs1(other_public_key_pem, format='PEM')
 
-    # Encrypt the message using the other user's public key
-    message = rsa.encrypt(msg.encode(FORMAT), other_public_key)
+    # Construct message in "recipient:message" format before encrypting
+    final_message = f"{username1.decode(FORMAT)}:{msg}".encode(FORMAT)
+    encrypted_message = rsa.encrypt(final_message, other_public_key)
 
-    message = rsa.encrypt(msg.encode(FORMAT),other_public_key)
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
