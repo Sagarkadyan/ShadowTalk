@@ -10,7 +10,9 @@ DISCONNECTED_MSG ="disconnect"
 SERVER =socket.gethostbyname(socket.gethostname())
 ADDR =(SERVER,PORT)
 
-client={}
+client_keys = {}  # Stores public keys per username
+clients = {}      # Rename from `client` to `clients` for clarity
+
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 server.bind(ADDR)
 
@@ -27,64 +29,78 @@ def send_with_header(conn, text):
 
 
 def handle_client(conn, addr):
-    username_length = int(conn.recv(HEADER).decode(FORMAT).strip())
-    username = conn.recv(username_length).decode(FORMAT)
-    # Receive and store client's public key
-    public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
-    public_key_pem = conn.recv(public_key_length)
-    client_keys[username] = public_key_pem  # Store raw PEM
-    print(f"[+] Stored public key for {username}")
+    try:
+        username_length = int(conn.recv(HEADER).decode(FORMAT).strip())
+        username = conn.recv(username_length).decode(FORMAT)
 
-    client[username] = conn
-    print(f"[new connection] {addr} connected as {username}.")
-    print(f"key recived of {username} key {client_public_key}")
-    connected = True
-    while connected:
-        try:
+        public_key_length = int(conn.recv(HEADER).decode(FORMAT).strip())
+        public_key_pem = conn.recv(public_key_length)
+
+        clients[username] = conn
+        client_keys[username] = public_key_pem
+
+        print(f"[+] {username} connected from {addr}")
+        print(f"[+] Stored public key for {username}")
+
+        connected = True
+        while connected:
             msg_length_raw = conn.recv(HEADER)
             if not msg_length_raw:
                 break
             msg_length = int(msg_length_raw.decode(FORMAT).strip())
             if msg_length == 0:
                 continue
-            msg = conn.recv(msg_length).decode(FORMAT)
-            if msg == DISCONNECTED_MSG:
+            msg = conn.recv(msg_length)
+
+            if msg.decode(FORMAT) == DISCONNECTED_MSG:
+                print(f"[!] {username} disconnected.")
                 connected = False
                 break
-            if ":" in msg:
-                recipient, actual_msg = msg.split(":", 1)
-                if recipient in client:
-                    # Step 1: Send recipient's public key to sender
 
-                    recipient_key = client_keys[recipient]
-                    recipient_key_length = str(len(recipient_key)).encode(FORMAT)
-                    conn.send(recipient_key_length.ljust(HEADER))
-                    conn.send(recipient_key)
-                else :
-                    conn.send("0".encode(FORMAT).ljust(HEADER))
-                    print(f"[!] No key for recipient {recipient}")
-                    continue  # Skip sending message if recipient has no key
+            # Receive format: recipient:message
+            try:
+                message_text = msg.decode(FORMAT)
+                if ":" not in message_text:
+                    send_with_header(conn, "Invalid format. Use recipient:message")
+                    continue
 
-                    try:
-                        full_msg = f"[{username}] {actual_msg}".encode(FORMAT)
-                        length = str(len(full_msg)).encode(FORMAT)
-                        length += b' ' * (HEADER - len(length))
-                        client[recipient].send(length)
-                        client[recipient].send(full_msg)
-                        send_with_header(conn, "Message sent.")
-                    except Exception as e:
-                        print(f"Error sending to {recipient}: {e}")
-                        send_with_header(conn, "Failed to send")
-            
-                   
-                       
-            else:
-                send_with_header(conn,"Invalid format. Use recipient:message")
-        except Exception as e:
-            print(f"Error: {e}")
-            break
-    del client[username]
-    conn.close()
+                recipient, actual_msg = message_text.split(":", 1)
+
+                if recipient not in clients or recipient not in client_keys:
+                    send_with_header(conn, f"Recipient '{recipient}' not found.")
+                    continue
+
+                # Step 1: Send recipient's public key to sender
+                recipient_key = client_keys[recipient]
+                recipient_key_length = str(len(recipient_key)).encode(FORMAT)
+                conn.send(recipient_key_length.ljust(HEADER))
+                conn.send(recipient_key)
+
+                # Step 2: Wait for encrypted message from sender
+                encrypted_msg_len = int(conn.recv(HEADER).decode(FORMAT).strip())
+                encrypted_msg = conn.recv(encrypted_msg_len)
+
+                # Step 3: Forward to recipient
+                clients[recipient].send(HEADER.to_bytes(1, 'big') * HEADER)  # dummy header
+                clients[recipient].send(encrypted_msg)
+                send_with_header(conn, "Message sent.")
+                print(f"[MSG] {username} ➜ {recipient}")
+
+            except Exception as e:
+                print(f"[ERR] Message handling failed: {e}")
+                send_with_header(conn, "Failed to process message")
+
+    except Exception as e:
+        print(f"[ERR] Connection error: {e}")
+
+    finally:
+        conn.close()
+        if username in clients:
+            del clients[username]
+        if username in client_keys:
+            del client_keys[username]
+        print(f"[Cleanup] Removed {username}")
+
 
 def start():
     server.listen()
