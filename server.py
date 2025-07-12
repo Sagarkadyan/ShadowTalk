@@ -76,10 +76,10 @@ def handle_client(conn, addr):
                 # Step 1: Send recipient's public key to sender
                 recipient_key = client_keys[recipient]
                 recipient_key_length = str(len(recipient_key)).encode(FORMAT)
-                conn.send(recipient_key_length.ljust(HEADER))
-                
+                conn.send(b"KEY")
+                conn.send(str(len(recipient_key)).encode(FORMAT).ljust(HEADER))
                 conn.send(recipient_key)
-               
+
                 # Step 2: Wait for encrypted message from sender
                 encrypted_msg_len = int(conn.recv(HEADER).decode(FORMAT).strip())
                
@@ -87,6 +87,7 @@ def handle_client(conn, addr):
 
                 # Step 3: Forward to recipient
                 # Send real header and encrypted message
+                clients[recipient].send(b"MSG") 
                 msg_len_encoded = str(len(encrypted_msg)).encode(FORMAT).ljust(HEADER)
                 clients[recipient].send(msg_len_encoded)
                 clients[recipient].send(encrypted_msg)

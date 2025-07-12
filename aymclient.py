@@ -36,25 +36,29 @@ def recv_exact(sock, num_bytes):
         data += packet
     return data
 
-
 def receive():
     while True:
         try:
-            msg_length_raw = recv_exact(client, HEADER)
-            try:
-                msg_length = int(msg_length_raw.decode(FORMAT).strip())
-            except ValueError:
-                print("[!] Skipped non-message data:", msg_length_raw.decode(errors="ignore"))
-                continue
+            msg_type = recv_exact(client, 3).decode(FORMAT)
 
+            msg_length = int(recv_exact(client, HEADER).decode(FORMAT).strip())
             msg = recv_exact(client, msg_length)
 
-            try:
+            if msg_type == "MSG":
                 decrypted = rsa.decrypt(msg, private_key_own).decode(FORMAT)
-                print(f"\n[Decrypted Message]:{username1} :{decrypted}")
-            except rsa.DecryptionError:
-                print("[!] Cannot decrypt — possibly server message or wrong key.")
-                print("[Raw]:", msg.decode(errors="ignore"))
+                sender, recipient, content = decrypted.split(":", 2)
+                print(f"\n[From {sender} ]: {content}")
+
+            elif msg_type == "SYS":
+                print(f"[System]: {msg.decode(FORMAT)}")
+
+            elif msg_type == "KEY":
+                print("[!] Unexpected key message received in background — skipping.")
+                continue
+
+            else:
+                print(f"[?] Unknown message type '{msg_type}'")
+
         except Exception as e:
             print("Connection closed or error:", e)
             break
@@ -104,24 +108,34 @@ while True:
     full_encoded = full_message.encode(FORMAT)
     client.send(str(len(full_encoded)).encode(FORMAT).ljust(HEADER))
     client.send(full_encoded)
+     # First, read message type from server
+    msg_type = recv_exact(client, 3).decode(FORMAT)
 
-   # Receive the length of the other user's public key
-    otherkey_length = int(recv_exact(client,HEADER).decode(FORMAT).strip())
+    if msg_type != "KEY":
+        print("[!] Expected public key, but got:", msg_type)
+        continue
+
+# Now it's safe to read key length
+    otherkey_length = int(recv_exact(client, HEADER).decode(FORMAT).strip())
     print("[+] Other public key length:", otherkey_length)
 
-    # Receive the actual public key bytes (PEM format)
-    other_public_key_pem = recv_exact(client ,otherkey_length)
+# Read the key itself
+    other_public_key_pem = recv_exact(client, otherkey_length)
     print("[+] Received PEM:\n", other_public_key_pem.decode(FORMAT))
+
+   # Receive the length of the other user's public key
+    
+
     
    
 
     # Convert PEM bytes to PublicKey object
     other_public_key = rsa.PublicKey.load_pkcs1(other_public_key_pem, format='PEM')
-
+    formatted = f"{username}:{username1}:{msg}"
     # Encrypt the message using the other user's public key
-    message = rsa.encrypt(msg.encode(FORMAT), other_public_key)
+    message = rsa.encrypt(formatted.encode(FORMAT), other_public_key)
 
-    message = rsa.encrypt(msg.encode(FORMAT),other_public_key)
+    
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
