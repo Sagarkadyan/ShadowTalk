@@ -53,7 +53,7 @@ def receive():
                 print(f"[System]: {msg.decode(FORMAT)}")
 
             elif msg_type == "KEY":
-                print("[!] Unexpected key message received in background — skipping.")
+                #print("[!] Unexpected key message received in background — skipping.")
                 continue
 
             else:
