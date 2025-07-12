@@ -40,19 +40,21 @@ def recv_exact(sock, num_bytes):
 def receive():
     while True:
         try:
-            # Step 1: Read the header (length of encrypted message)
             msg_length_raw = recv_exact(client, HEADER)
-            msg_length = int(msg_length_raw.decode(FORMAT).strip())
-            if msg_length == 0:
+            try:
+                msg_length = int(msg_length_raw.decode(FORMAT).strip())
+            except ValueError:
+                print("[!] Skipped non-message data:", msg_length_raw.decode(errors="ignore"))
                 continue
 
-            # Step 2: Receive encrypted message as raw bytes
-            encrypted_msg = recv_exact(client, msg_length)
+            msg = recv_exact(client, msg_length)
 
-            # Step 3: Decrypt using your private key
-            decrypted = rsa.decrypt(encrypted_msg, private_key_own).decode(FORMAT)
-
-            print(f"\n[Decrypted Message]: {decrypted}")
+            try:
+                decrypted = rsa.decrypt(msg, private_key_own).decode(FORMAT)
+                print(f"\n[Decrypted Message]:{username1} :{decrypted}")
+            except rsa.DecryptionError:
+                print("[!] Cannot decrypt — possibly server message or wrong key.")
+                print("[Raw]:", msg.decode(errors="ignore"))
         except Exception as e:
             print("Connection closed or error:", e)
             break

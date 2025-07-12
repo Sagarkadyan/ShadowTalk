@@ -33,7 +33,8 @@ def handle_client(conn, addr):
     try:
         username_length = int(recv_exact(conn,HEADER).decode(FORMAT).strip())
         username = recv_exact(conn,username_length).decode(FORMAT)
-
+        
+        
         public_key_length = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
         public_key_pem = recv_exact(conn, public_key_length)
 
@@ -76,10 +77,12 @@ def handle_client(conn, addr):
                 recipient_key = client_keys[recipient]
                 recipient_key_length = str(len(recipient_key)).encode(FORMAT)
                 conn.send(recipient_key_length.ljust(HEADER))
+                
                 conn.send(recipient_key)
-
+               
                 # Step 2: Wait for encrypted message from sender
                 encrypted_msg_len = int(conn.recv(HEADER).decode(FORMAT).strip())
+               
                 encrypted_msg = recv_exact(conn,encrypted_msg_len)
 
                 # Step 3: Forward to recipient
