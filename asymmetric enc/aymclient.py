@@ -11,9 +11,8 @@ FORMAT = "utf-8"
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 
-
+#generate a new key every time 
 pubkey, privkey = rsa.newkeys(512)
-
 with open("public.pem", "wb") as f:
     f.write(pubkey.save_pkcs1("PEM"))
 
