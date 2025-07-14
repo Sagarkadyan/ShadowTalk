@@ -1,148 +1,125 @@
-import rsa
+
 import socket
 import threading
-import time 
+import time
+import rsa
+import queue
 
 HEADER = 64
-PORT =9999
-FORMAT ="utf-8"
-DISCONNECTED_MSG ="disconnect"
+PORT = 9999
+FORMAT = "utf-8"
 SERVER = socket.gethostbyname(socket.gethostname())
-ADDR =(SERVER,PORT)
+ADDR = (SERVER, PORT)
 
+
+pubkey, privkey = rsa.newkeys(512)
+
+with open("public.pem", "wb") as f:
+    f.write(pubkey.save_pkcs1("PEM"))
+
+with open("private.pem", "wb") as f:
+    f.write(privkey.save_pkcs1("PEM"))
+
+print("✅ Keys generated: public.pem, private.pem")
+
+
+
+
+# Load keys
+with open("public.pem", "rb") as f:
+    my_pub = rsa.PublicKey.load_pkcs1(f.read())
+with open("private.pem", "rb") as f:
+    my_priv = rsa.PrivateKey.load_pkcs1(f.read())
+
+# Connect to server
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
-''' Only run this part once to generate new key files
-public_key, private_key = rsa.newkeys(1024)
-with open("public.pem", "wb") as f:
-    f.write(public_key.save_pkcs1("PEM"))
-with open("private.pem", "wb") as f:
-    f.write(private_key.save_pkcs1("PEM"))
-'''
-#Now read the keys back (make sure files exist and are correct)
-with open("public.pem", "rb") as f:
-    public_key_own = rsa.PublicKey.load_pkcs1(f.read())
+# Message queue for system responses (KEY, SYS)
+response_queue = queue.Queue()
 
-with open("private.pem", "rb") as f:
-    private_key_own = rsa.PrivateKey.load_pkcs1(f.read())
-
-def recv_exact(sock, num_bytes):
+# Receive exactly N bytes
+def recv_exact(sock, num):
     data = b""
-    while len(data) < num_bytes:
-        packet = sock.recv(num_bytes - len(data))
-        if not packet:
-            raise ConnectionError("Connection closed during recv_exact")
-        data += packet
+    while len(data) < num:
+        chunk = sock.recv(num - len(data))
+        if not chunk:
+            raise ConnectionError("Socket closed")
+        data += chunk
     return data
 
+# Send message with header
+def send_with_header(sock, data):
+    if isinstance(data, str):
+        data = data.encode(FORMAT)
+    sock.send(str(len(data)).encode(FORMAT).ljust(HEADER))
+    time.sleep(0.01)
+    sock.send(data)
+
+# Receiver thread: handles all messages
 def receive():
     while True:
         try:
             msg_type = recv_exact(client, 3).decode(FORMAT)
-
-            msg_length = int(recv_exact(client, HEADER).decode(FORMAT).strip())
-            msg = recv_exact(client, msg_length)
+            msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+            msg = recv_exact(client, msg_len)
 
             if msg_type == "MSG":
-                decrypted = rsa.decrypt(msg, private_key_own).decode(FORMAT)
-                sender, recipient, content = decrypted.split(":", 2)
-                print(f"\n[From {sender} ]: {content}")
+                try:
+                    decrypted = rsa.decrypt(msg, my_priv).decode(FORMAT)
+                    print(f"\n[Message]: {decrypted}")
+                except Exception as e:
+                    print(f"[!] Decryption failed: {e}")
 
-            elif msg_type == "SYS":
-                print(f"[System]: {msg.decode(FORMAT)}")
-
-            elif msg_type == "KEY":
-                #print("[!] Unexpected key message received in background — skipping.")
-                continue
-
-            else:
-                print(f"[?] Unknown message type '{msg_type}'")
-
+            elif msg_type in ["SYS", "KEY"]:
+                response_queue.put((msg_type, msg))  # Store response for main thread
         except Exception as e:
-            print("Connection closed or error:", e)
+            print(f"[Receiver Error]: {e}")
             break
 
-
-username = input("Enter your username: ")
-username_encoded = username.encode(FORMAT)
-username_length = str(len(username_encoded)).encode(FORMAT)
-#username_length += b' ' * (HEADER - len(username_length))
-client.send(username_length.ljust(HEADER))
-time.sleep(0.05)  # import time
-client.send(username_encoded)
+# Login: username and public key
+username = input("Enter your username: ").strip()
+send_with_header(client, username)
 time.sleep(0.05)
-key_encoded = public_key_own.save_pkcs1(format='PEM')
-key_length =str(len(key_encoded)).encode(FORMAT)       
-key_length += b' '  * (HEADER - len(key_length))
-client.send(key_length)
-time.sleep(0.05)
-client.send(key_encoded)
+send_with_header(client, my_pub.save_pkcs1("PEM"))
 
+# Start the receiver thread
 threading.Thread(target=receive, daemon=True).start()
 
-
-
+# Main loop: prompt user, send request, wait for queued response
 while True:
-    username1=input("write the recipient name")
-    username1= username1.encode(FORMAT)
-    msg = input("enter the message\n")
+    to = input("Recipient username: ").strip()
+    msg = input("Message: ").strip()
 
-    if msg == DISCONNECTED_MSG:
-        send_msg = DISCONNECTED_MSG.encode(FORMAT)
-        send_length = str(len(send_msg)).encode(FORMAT)
-        send_length += b' ' * (HEADER - len(send_length))
-        client.send(send_length)
-        time.time.sleep(0.05)
-        client.send(send_msg)
+    if msg.lower() == "disconnect":
+        send_with_header(client, "disconnect")
         break
-  
-  
-    if not username1 or not msg:
-     print("[!] Recipient name or message is empty.")
-     continue  # Skip and prompt again
 
+    # Step 1: Ask server for public key
+    send_with_header(client, f"REQUESTKEY:{to}")
 
-    # Step 1: Send plaintext recipient:message string
-    full_message = f"{username1.decode(FORMAT)}:{msg}"
-    full_encoded = full_message.encode(FORMAT)
-    client.send(str(len(full_encoded)).encode(FORMAT).ljust(HEADER))
-    client.send(full_encoded)
-     # First, read message type from server
-    msg_type = recv_exact(client, 3).decode(FORMAT)
-
-    if msg_type != "KEY":
-        print("[!] Expected public key, but got:", msg_type)
+    # Step 2: Wait for KEY or SYS in queue
+    try:
+        msg_type, payload = response_queue.get(timeout=5)
+    except queue.Empty:
+        print("[Error]: No response from server.")
         continue
 
-# Now it's safe to read key length
-    otherkey_length = int(recv_exact(client, HEADER).decode(FORMAT).strip())
-    print("[+] Other public key length:", otherkey_length)
+    if msg_type == "KEY":
+        try:
+            their_key = rsa.PublicKey.load_pkcs1(payload, format="PEM")
+            encrypted = rsa.encrypt(msg.encode(FORMAT), their_key)
+            payload_msg = f"SENDMSG:{to}".encode(FORMAT) + b":" + encrypted
+            send_with_header(client, payload_msg)
 
-# Read the key itself
-    other_public_key_pem = recv_exact(client, otherkey_length)
-    print("[+] Received PEM:\n", other_public_key_pem.decode(FORMAT))
-
-   # Receive the length of the other user's public key
-    
-
-    
-   
-
-    # Convert PEM bytes to PublicKey object
-    other_public_key = rsa.PublicKey.load_pkcs1(other_public_key_pem, format='PEM')
-    formatted = f"{username}:{username1}:{msg}"
-    # Encrypt the message using the other user's public key
-    message = rsa.encrypt(formatted.encode(FORMAT), other_public_key)
-
-    
-    msg_length = len(message)
-    send_length = str(msg_length).encode(FORMAT)
-    send_length += b' ' * (HEADER - len(send_length))
-
-    client.send(send_length)
-    time.sleep(0.05)
-    client.send(message)
-client.close()
-
-
+            # Step 3: Wait for SYS confirmation
+            try:
+                ack_type, ack_msg = response_queue.get(timeout=5)
+                if ack_type == "SYS":
+                    print(f"[System]: {ack_msg.decode(FORMAT)}")
+            except queue.Empty:
+                print("[Error]: No delivery confirmation.")
+        except Exception as e:
+            print(f"[Encrypt Error]: {e}")
+    elif msg_type == "SYS":
+        print(f"[System]: {payload.decode(FORMAT)}")

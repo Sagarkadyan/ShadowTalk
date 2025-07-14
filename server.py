@@ -79,7 +79,8 @@ def handle_client(conn, addr):
                 conn.send(b"KEY")
                 conn.send(str(len(recipient_key)).encode(FORMAT).ljust(HEADER))
                 conn.send(recipient_key)
-
+                print(f"[DEBUG] Sent recipient public key PEM to {username} ({len(recipient_key)} bytes)")
+                print(f"[DEBUG] First 30 bytes: {recipient_key[:30]}")
                 # Step 2: Wait for encrypted message from sender
                 encrypted_msg_len = int(conn.recv(HEADER).decode(FORMAT).strip())
                
