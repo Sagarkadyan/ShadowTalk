@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🔐 Secure Chat</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Secure Chat App</h1>
+
+    <div class="form">
+      <input type="text" id="username" placeholder="Your username" />
+      <button onclick="registerUser()">Login</button>
+    </div>
+
+    <div class="chat-panel">
+      <div class="sidebar">
+        <h3>Online Users</h3>
+        <select id="userList" size="8"></select>
+        <button onclick="loadUsers()">🔄 Refresh</button>
+      </div>
+
+      <div class="chat-section">
+        <div id="chatBox" class="chat-box"></div>
+        <div class="input-group">
+          <textarea id="messageInput" placeholder="Type a message..."></textarea>
+          <button onclick="sendMessage()">📤 Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = "";
+    let selectedUser = "";
+
+    function registerUser() {
+      currentUser = document.getElementById("username").value.trim();
+      if (!currentUser) return alert("Please enter your username.");
+
+      fetch("/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: currentUser })
+      }).then(() => {
+        loadUsers();
+      });
+    }
+
+    function loadUsers() {
+      fetch("/online")
+        .then(res => res.json())
+        .then(users => {
+          const userList = document.getElementById("userList");
+          userList.innerHTML = "";
+          users.forEach(u => {
+            if (u !== currentUser) {
+              const option = document.createElement("option");
+              option.value = u;
+              option.textContent = u;
+              userList.appendChild(option);
+            }
+          });
+          selectedUser = userList.value;
+        });
+    }
+
+    function sendMessage() {
+      const message = document.getElementById("messageInput").value.trim();
+      selectedUser = document.getElementById("userList").value;
+      if (!message || !selectedUser || !currentUser) return;
+
+      fetch("/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: currentUser,
+          recipient: selectedUser,
+          message: message
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "ok") {
+          document.getElementById("messageInput").value = "";
+          fetchMessages();
+        } else {
+          alert("❌ Send failed: " + data.message);
+        }
+      });
+    }
+
+    function fetchMessages() {
+      if (!selectedUser || !currentUser) return;
+      fetch(`/history?user1=${currentUser}&user2=${selectedUser}`)
+        .then(res => res.json())
+        .then(data => {
+          const chatBox = document.getElementById("chatBox");
+          chatBox.innerHTML = "";
+          data.history.forEach(line => {
+            const parts = line.split(":");
+            const sender = parts[0];
+            const message = parts.slice(1).join(":");
+            const div = document.createElement("div");
+            div.className = sender.trim() === currentUser ? "bubble sent" : "bubble received";
+            div.innerText = `${sender.trim()}: ${message.trim()}`;
+            chatBox.appendChild(div);
+          });
+          chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    }
+
+    setInterval(fetchMessages, 3000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Chat Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #818cf8;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --online-status: #10b981;
+        }
+
+        .dark-mode {
+            --primary-color: #6366f1;
+            --secondary-color: #4f46e5;
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --online-status: #34d399;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .chat-container {
+            height: 100vh;
+        }
+
+        .user-bubble {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .other-bubble {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .online-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: var(--online-status);
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                width: 100%;
+                height: 100vh;
+                z-index: 10;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+    <div class="flex flex-col chat-container">
+        <!-- Login Modal -->
+        <div id="loginModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-96">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Welcome to Chat</h2>
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                    <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white" placeholder="Enter your username">
+                </div>
+                <div class="flex justify-end">
+                    <button id="loginBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">Join Chat</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white p-4 shadow-md">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center">
+                    <button id="menuBtn" class="md:hidden mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-bold">Chat App</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="currentUser" class="hidden md:flex items-center">
+                        <span class="online-indicator mr-2"></span>
+                        <span class="font-medium"></span>
+                    </div>
+                    <button id="themeToggle" class="p-2 rounded-full hover:bg-indigo-700 transition-colors">
+                        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+                        </svg>
+                        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar -->
+            <aside id="sidebar" class="sidebar w-64 bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 class="text-lg font-semibold text-gray-800 dark:text-white">Online Users</h2>
+                </div>
+                <div id="userList" class="flex-1 overflow-y-auto p-4">
+                    <!-- User list will be populated here -->
+                </div>
+            </aside>
+
+            <!-- Main Chat Area -->
+            <main class="flex-1 flex flex-col bg-white dark:bg-gray-700">
+                <div id="chatArea" class="flex-1 overflow-y-auto p-4 space-y-3">
+                    <!-- Chat messages will be displayed here -->
+                </div>
+
+                <!-- Input Area -->
+                <div class="p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800">
+                    <div class="flex items-center space-x-2">
+                        <input id="messageInput" type="text" class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white" placeholder="Type your message...">
+                        <button id="sendBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-colors">
+                            Send
+                        </button>
+                    </div>
+                    <div id="typingIndicator" class="typing-indicator mt-2 ml-2 hidden">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const loginModal = document.getElementById('loginModal');
+        const usernameInput = document.getElementById('username');
+        const loginBtn = document.getElementById('loginBtn');
+        const menuBtn = document.getElementById('menuBtn');
+        const sidebar = document.getElementById('sidebar');
+        const themeToggle = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const userList = document.getElementById('userList');
+        const currentUserDisplay = document.getElementById('currentUser');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // App State
+        let currentUser = '';
+        let users = [];
+        let messages = [];
+        let refreshInterval;
+        let isTyping = false;
+        let typingTimeout;
+
+        // Theme Management
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        const currentTheme = localStorage.getItem('theme') || (prefersDarkScheme.matches ? 'dark' : 'light');
+        
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            sunIcon.classList.add('hidden');
+            moonIcon.classList.remove('hidden');
+        } else {
+            document.body.classList.remove('dark-mode');
+            sunIcon.classList.remove('hidden');
+            moonIcon.classList.add('hidden');
+        }
+
+        // Initialize
+        function init() {
+            loadChatHistory();
+            setupEventListeners();
+            loginModal.classList.remove('hidden');
+        }
+
+        function setupEventListeners() {
+            // Login
+            loginBtn.addEventListener('click', handleLogin);
+            usernameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+
+            // Sidebar toggle for mobile
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+
+            // Message sending
+            sendBtn.addEventListener('click', sendMessage);
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
+            });
+            
+            // Typing indicator
+            messageInput.addEventListener('input', () => {
+                if (!isTyping) {
+                    isTyping = true;
+                    // In a real app, you would notify other users here
+                    typingIndicator.classList.remove('hidden');
+                }
+                
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    isTyping = false;
+                    typingIndicator.classList.add('hidden');
+                    // In a real app, you would notify other users here
+                }, 2000);
+            });
+
+            // Theme toggle
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                
+                if (document.body.classList.contains('dark-mode')) {
+                    sunIcon.classList.add('hidden');
+                    moonIcon.classList.remove('hidden');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    sunIcon.classList.remove('hidden');
+                    moonIcon.classList.add('hidden');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
+
+        function handleLogin() {
+            const username = usernameInput.value.trim();
+            if (username) {
+                currentUser = username;
+                loginModal.classList.add('hidden');
+                currentUserDisplay.querySelector('span').textContent = username;
+                currentUserDisplay.classList.remove('hidden');
+                
+                // Simulate adding current user to user list
+                addUser(username);
+                
+                // Start auto-refresh
+                refreshInterval = setInterval(updateMessages, 3000);
+                
+                // Display welcome message
+                displayMessage({
+                    sender: 'System',
+                    message: `Welcome to the chat, ${username}!`,
+                    timestamp: new Date().toISOString()
+                }, true);
+                
+                // Save username to localStorage
+                localStorage.setItem('currentUser', username);
+            }
+        }
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message === "" || !selectedUser || !currentUser) return;
+
+            fetch("/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: currentUser,
+                    recipient: selectedUser,
+                    message: message
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    fetchMessages(); // refresh from backend
+                    messageInput.value = "";
+                } else {
+                    alert("❌ Error sending message: " + data.message);
+                }
+            });
+        }
+
+                
+         
+        function displayMessage(msg, isCurrentUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = `max-w-xs md:max-w-md px-4 py-2 mb-2 ${isCurrentUser ? 'user-bubble' : 'other-bubble'}`;
+            
+            if (!isCurrentUser) {
+                const senderDiv = document.createElement('div');
+                senderDiv.className = 'font-semibold text-sm mb-1';
+                senderDiv.textContent = msg.sender;
+                bubbleDiv.appendChild(senderDiv);
+            }
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'text-sm';
+            textDiv.textContent = msg.message;
+            bubbleDiv.appendChild(textDiv);
+            
+            const timeDiv = document.createElement('div');
+            timeDiv.className = `text-xs mt-1 text-right ${isCurrentUser ? 'text-indigo-100' : 'text-gray-500 dark:text-gray-400'}`;
+            
+            const msgTime = new Date(msg.timestamp);
+            timeDiv.textContent = msgTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            bubbleDiv.appendChild(timeDiv);
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatArea.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function addUser(username) {
+            // Don't add duplicate users
+            if (users.includes(username)) return;
+            
+            users.push(username);
+            
+            const userItem = document.createElement('div');
+            userItem.className = 'flex items-center py-2 px-3 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md cursor-pointer transition-colors';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'online-indicator mr-2';
+            
+            const userNameDiv = document.createElement('div');
+            userNameDiv.className = 'text-sm text-gray-700 dark:text-gray-300';
+            userNameDiv.textContent = username;
+            
+            if (username === currentUser) {
+                userItem.classList.add('font-medium');
+            }
+            
+            userItem.appendChild(indicator);
+            userItem.appendChild(userNameDiv);
+            userList.appendChild(userItem);
+        }
+
+        function fetchMessages() {
+            if (!selectedUser || !currentUser) return;
+            fetch(`/history?user1=${currentUser}&user2=${selectedUser}`)
+                .then(res => res.json())
+                .then(data => {
+                    chatArea.innerHTML = "";
+                    data.history.forEach(line => {
+                        const parts = line.split(":");
+                        const sender = parts[0];
+                        const message = parts.slice(1).join(":");
+                        displayMessage({ sender, message, timestamp: "" }, sender === currentUser);
+                    });
+                });
+        }
+
+        
+        function saveChatHistory() {
+            const allMessages = [
+                ...messages,
+                ...JSON.parse(localStorage.getItem('chatMessages') || '[]')
+            ];
+            
+            // Deduplicate messages
+            const uniqueMessages = Array.from(new Set(allMessages.map(JSON.stringify))).map(JSON.parse);
+            
+            localStorage.setItem('chatMessages', JSON.stringify(uniqueMessages));
+        }
+
+        function loadChatHistory() {
+            const storedUser = localStorage.getItem('currentUser');
+            if (storedUser) {
+                usernameInput.value = storedUser;
+            }
+            
+            const storedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+            messages = [...storedMessages];
+        }
+
+        // Initialize the app
+        init();
+    </script>
+</body>
+</html>

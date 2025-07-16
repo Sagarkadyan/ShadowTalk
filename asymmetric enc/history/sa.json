@@ -1,0 +1,36 @@
+[
+  {
+    "time": "15:09",
+    "direction": "sent",
+    "text": "hiii \u2714 Delivered"
+  },
+  {
+    "time": "15:10",
+    "direction": "recv",
+    "text": "seen in wrong place \u2714\u2714 Seen"
+  },
+  {
+    "time": "15:13",
+    "direction": "sent",
+    "sender": "da",
+    "text": "hii"
+  },
+  {
+    "time": "15:31",
+    "direction": "recv",
+    "sender": "sa",
+    "text": "hii"
+  },
+  {
+    "time": "15:42",
+    "direction": "sent",
+    "sender": "da",
+    "text": "hi"
+  },
+  {
+    "time": "15:42",
+    "direction": "recv",
+    "sender": "sa",
+    "text": "hello"
+  }
+]
