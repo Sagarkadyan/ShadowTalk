@@ -5,12 +5,13 @@ import time
 import rsa
 import queue
 from colorama import Fore, Style
+
 HEADER = 4
-PORT = 9999
+PORT = 24179  # Playit assigned port
 FORMAT = "utf-8"
-LOCAL_MODE = False  # For remote device connection
-SERVER = "serveo.net"
-PORT = ASSIGNED_PORT  # Use the port Serveo actually provides
+
+LOCAL_MODE = False
+SERVER = "ready-lebanon.gl.at.ply.gg"  # Playit assigned address
 ADDR = (SERVER, PORT)
 
 
