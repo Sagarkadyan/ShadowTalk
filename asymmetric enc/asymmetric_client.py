@@ -10,7 +10,7 @@ PORT = 24179  # Playit assigned port
 FORMAT = "utf-8"
 
 LOCAL_MODE = False
-SERVER = "ready-lebanon.gl.at.ply.gg"  # Playit assigned address
+SERVER = "ready-lebanon.gl.at.ply.gg"  # Playit assigned address use your own tcp server its  free
 ADDR = (SERVER, PORT)
 
 
