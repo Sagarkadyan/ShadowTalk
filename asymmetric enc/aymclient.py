@@ -1,4 +1,3 @@
-
 import socket
 import threading
 import time
@@ -20,7 +19,7 @@ ADDR = (SERVER, PORT)
 
 def print_banner():
     banner = r"""
-  ________ __ __   ____  ___     ___   __    __      ______   ____  _      __  _ 
+  _____ ___ __ __ ____ ___    _____  __   ____    _______   ____  _      __  _ 
  / ___/|  T  T /    T|   \   /   \ |  T__T  T    |      T /    T| T    |  l/ ]
 (   \_ |  l  |Y  o  ||    \ Y     Y|  |  |  |    |      |Y  o  || |    |  ' / 
  \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \ 
