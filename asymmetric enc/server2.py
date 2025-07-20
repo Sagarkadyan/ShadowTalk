@@ -1,7 +1,7 @@
 import socket
 import threading
 
-HEADER = 64
+HEADER = 4
 PORT = 9999
 FORMAT = "utf-8"
 SERVER =  "127.0.0.1"

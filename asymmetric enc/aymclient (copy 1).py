@@ -9,7 +9,7 @@ from colorama import init, Fore, Style
 init()
 
 # Constants
-HEADER = 64
+HEADER = 4
 PORT = 9999
 FORMAT = "utf-8"
 SERVER = socket.gethostbyname(socket.gethostname())

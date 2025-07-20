@@ -4,14 +4,37 @@ import threading
 import time
 import rsa
 import queue
-
-HEADER = 64
+from colorama import Fore, Style
+HEADER = 4
 PORT = 9999
 FORMAT = "utf-8"
-SERVER = socket.gethostbyname(socket.gethostname())
+LOCAL_MODE = False  # For remote device connection
+SERVER = "serveo.net"
+PORT = ASSIGNED_PORT  # Use the port Serveo actually provides
 ADDR = (SERVER, PORT)
 
-#generate a new key every time 
+
+
+
+
+def print_banner():
+    banner = r"""
+     _____ __ __   ____  ___     ___   __    __      ______   ____  _      __  _ 
+ / ___/|  T  T /    T|   \   /   \ |  T__T  T    |      T /    T| T    |  l/ ]
+(   \_ |  l  |Y  o  ||    \ Y     Y|  |  |  |    |      |Y  o  || |    |  ' / 
+ \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \ 
+ /  \ ||  |  ||  _  ||     ||     |l  `  '  !      |  |  |  _  ||     T|     Y
+ \    ||  |  ||  |  ||     |l     ! \      /       |  |  |  |  ||     ||  .  |
+  \___jl__j__jl__j__jl_____j \___/   \_/\_/        l__j  l__j__jl_____jl__j\_j
+                                                                              
+
+
+                 ENCRYPTED CYBERLINK — SHADOWTALK v1.0
+
+    """
+    
+    print(Fore.RED + banner + Style.RESET_ALL)
+print_banner()#generate a new key every time 
 pubkey, privkey = rsa.newkeys(512)
 with open("public.pem", "wb") as f:
     f.write(pubkey.save_pkcs1("PEM"))

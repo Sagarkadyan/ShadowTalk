@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encrypted Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f1419 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background particles */
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) { width: 4px; height: 4px; background: #ff6b9d; top: 10%; left: 15%; animation-delay: 0s; }
+        .particle:nth-child(2) { width: 6px; height: 6px; background: #4ecdc4; top: 20%; left: 80%; animation-delay: 1s; }
+        .particle:nth-child(3) { width: 3px; height: 3px; background: #45b7d1; top: 60%; left: 10%; animation-delay: 2s; }
+        .particle:nth-child(4) { width: 5px; height: 5px; background: #96ceb4; top: 80%; left: 70%; animation-delay: 3s; }
+        .particle:nth-child(5) { width: 4px; height: 4px; background: #feca57; top: 30%; left: 50%; animation-delay: 4s; }
+        .particle:nth-child(6) { width: 3px; height: 3px; background: #ff9ff3; top: 70%; left: 30%; animation-delay: 5s; }
+        .particle:nth-child(7) { width: 6px; height: 6px; background: #54a0ff; top: 15%; left: 90%; animation-delay: 1.5s; }
+        .particle:nth-child(8) { width: 4px; height: 4px; background: #5f27cd; top: 85%; left: 20%; animation-delay: 2.5s; }
+        .particle:nth-child(9) { width: 5px; height: 5px; background: #00d2d3; top: 40%; left: 75%; animation-delay: 3.5s; }
+        .particle:nth-child(10) { width: 3px; height: 3px; background: #ff6348; top: 55%; left: 85%; animation-delay: 4.5s; }
+
+        /* Sparkle elements */
+        .sparkle {
+            position: absolute;
+            font-size: 20px;
+            color: #ff6b9d;
+            animation: sparkle 4s ease-in-out infinite;
+        }
+
+        .sparkle:nth-child(11) { top: 5%; left: 5%; animation-delay: 0s; }
+        .sparkle:nth-child(12) { top: 10%; right: 10%; animation-delay: 1s; color: #4ecdc4; }
+        .sparkle:nth-child(13) { bottom: 10%; left: 10%; animation-delay: 2s; color: #feca57; }
+        .sparkle:nth-child(14) { bottom: 5%; right: 5%; animation-delay: 3s; color: #ff6b9d; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: scale(0.5) rotate(0deg); opacity: 0.3; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+        }
+
+        .chat-container {
+            background: rgba(16, 20, 43, 0.95);
+            border: 2px solid rgba(79, 70, 229, 0.3);
+            border-radius: 24px;
+            padding: 32px;
+            width: 600px;
+            max-width: 90vw;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .lock-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #ff6b9d, #feca57);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: -0.5px;
+        }
+
+        .login-section {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .username-input {
+            flex: 1;
+            background: rgba(30, 35, 70, 0.8);
+            border: 2px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .username-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .username-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .login-btn {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            border: none;
+            border-radius: 16px;
+            padding: 16px 32px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .online-users {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ff6b9d;
+            margin-bottom: 16px;
+        }
+
+        .users-grid {
+            background: rgba(30, 35, 70, 0.6);
+            border: 2px solid rgba(79, 70, 229, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+        }
+
+        .chat-section {
+            margin-bottom: 24px;
+        }
+
+        .chat-info {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            font-size: 16px;
+        }
+
+        .chat-label {
+            color: #c084fc;
+            font-weight: 500;
+        }
+
+        .chat-status {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .chat-area {
+            background: rgba(30, 35, 70, 0.6);
+            border: 2px solid rgba(79, 70, 229, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            min-height: 200px;
+            margin-bottom: 16px;
+        }
+
+        .message-input-section {
+            display: flex;
+            gap: 16px;
+        }
+
+        .message-input {
+            flex: 1;
+            background: rgba(30, 35, 70, 0.8);
+            border: 2px solid rgba(79, 70, 229, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #ff6b9d, #ff8a80);
+            border: none;
+            border-radius: 16px;
+            padding: 16px 32px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
+        }
+
+        .send-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .chat-container {
+                width: 95vw;
+                padding: 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .login-section {
+                flex-direction: column;
+            }
+            
+            .message-input-section {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background particles -->
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="sparkle">✨</div>
+    <div class="sparkle">💫</div>
+    <div class="sparkle">✨</div>
+    <div class="sparkle">💫</div>
+
+    <div class="chat-container">
+        <div class="header">
+            <div class="lock-icon">🔒</div>
+            <h1 class="title">Encrypted Chat</h1>
+        </div>
+
+        <div class="login-section">
+            <input type="text" class="username-input" placeholder="sagar" value="sagar">
+            <button class="login-btn">Log in</button>
+        </div>
+
+        <div class="online-users">
+            <h2 class="section-title">Online Users</h2>
+            <div class="users-grid">
+                <span>No users online</span>
+            </div>
+        </div>
+
+        <div class="chat-section">
+            <div class="chat-info">
+                <span class="chat-label">Chatting with:</span>
+                <span class="chat-status">None</span>
+            </div>
+            <div class="chat-area"></div>
+        </div>
+
+        <div class="message-input-section">
+            <input type="text" class="message-input" placeholder="Type a message...">
+            <button class="send-btn">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Simple frontend interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.querySelector('.login-btn');
+            const sendBtn = document.querySelector('.send-btn');
+            const messageInput = document.querySelector('.message-input');
+            const chatArea = document.querySelector('.chat-area');
+            const usernameInput = document.querySelector('.username-input');
+
+            // Login button click
+            loginBtn.addEventListener('click', function() {
+                const username = usernameInput.value.trim();
+                if (username) {
+                    // Visual feedback only
+                    loginBtn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+                    loginBtn.textContent = 'Logged in';
+                    setTimeout(() => {
+                        loginBtn.style.background = 'linear-gradient(135deg, #4f46e5, #7c3aed)';
+                        loginBtn.textContent = 'Log in';
+                    }, 2000);
+                }
+            });
+
+            // Send message
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message) {
+                    // Add message to chat area
+                    const messageElement = document.createElement('div');
+                    messageElement.style.cssText = `
+                        background: rgba(79, 70, 229, 0.2);
+                        border-radius: 12px;
+                        padding: 12px 16px;
+                        margin-bottom: 8px;
+                        color: white;
+                        font-size: 14px;
+                        max-width: 80%;
+                        margin-left: auto;
+                    `;
+                    messageElement.textContent = message;
+                    chatArea.appendChild(messageElement);
+                    
+                    // Clear input
+                    messageInput.value = '';
+                    
+                    // Scroll to bottom
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                }
+            }
+
+            // Send button click
+            sendBtn.addEventListener('click', sendMessage);
+
+            // Enter key to send
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
