@@ -88,10 +88,16 @@ def receive():
 
             if msg_type == "MSG":
                 try:
-                    decrypted = rsa.decrypt(msg, my_priv).decode(FORMAT)
-                    print(f"\n[Message]: {decrypted}")
+                    sender_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+                    sender = recv_exact(client, sender_len).decode(FORMAT)
+                    # Then, receive encrypted message
+                    msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+                    encrypted_msg = recv_exact(client, msg_len)
+                    decrypted = rsa.decrypt(encrypted_msg, my_priv).decode(FORMAT)
+                    print(f"\n[{sender}]: {decrypted}")
                 except Exception as e:
-                    print(f"[!] Decryption failed: {e}")
+                    print(f"[!] Decryption failed: {e}"
+                
 
             elif msg_type in ["SYS", "KEY"]:
                 response_queue.put((msg_type, msg))  # Store response for main thread

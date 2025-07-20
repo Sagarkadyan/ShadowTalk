@@ -59,6 +59,7 @@ def handle_client(conn, addr):
                 encrypted = parts[2]
                 if recipient in clients:
                     clients[recipient].send(b"MSG")
+                    send_with_header(clients[recipient], username)
                     send_with_header(clients[recipient], encrypted)
 
                     conn.send(b"SYS")
