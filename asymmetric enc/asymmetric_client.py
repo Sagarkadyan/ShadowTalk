@@ -3,7 +3,7 @@ import threading
 import time
 import rsa
 import queue
-from colorama import Fore, Style
+from colorama import Fore, Style,  Back
 
 HEADER = 4
 PORT = 24179  # Playit assigned port
@@ -33,7 +33,7 @@ def print_banner():
 
     """
     
-    print(Fore.RED + banner + Style.RESET_ALL)
+    print(Fore.CYAN + Style.BRIGHT+ banner + Style.RESET_ALL)
 print_banner()#generate a new key every time 
 pubkey, privkey = rsa.newkeys(512)
 with open("public.pem", "wb") as f:
@@ -42,7 +42,7 @@ with open("public.pem", "wb") as f:
 with open("private.pem", "wb") as f:
     f.write(privkey.save_pkcs1("PEM"))
 
-print("✅ Keys generated: public.pem, private.pem")
+print(f"{Fore.GREEN}{Style.DIM}Keys generated: public.pem, private.pem")
 
 
 
@@ -83,30 +83,25 @@ def receive():
     while True:
         try:
             msg_type = recv_exact(client, 3).decode(FORMAT)
-            msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
-            msg = recv_exact(client, msg_len)
-
             if msg_type == "MSG":
-                try:
-                    sender_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
-                    sender = recv_exact(client, sender_len).decode(FORMAT)
-                    # Then, receive encrypted message
-                    msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
-                    encrypted_msg = recv_exact(client, msg_len)
-                    decrypted = rsa.decrypt(encrypted_msg, my_priv).decode(FORMAT)
-                    print(f"\n[{sender}]: {decrypted}")
-                except Exception as e:
-                    print(f"[!] Decryption failed: {e}"
-                
-
-            elif msg_type in ["SYS", "KEY"]:
-                response_queue.put((msg_type, msg))  # Store response for main thread
+                # 1. Get sender name
+                sender_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+                sender = recv_exact(client, sender_len).decode(FORMAT)
+                # 2. Get encrypted message
+                msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+                encrypted_msg = recv_exact(client, msg_len)
+                decrypted = rsa.decrypt(encrypted_msg, my_priv).decode(FORMAT)
+                print(f"\n{Fore.GREEN}{Style.BRIGHT}[{sender}]: {decrypted}")
+            else:
+                msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
+                msg = recv_exact(client, msg_len)
+                if msg_type in ["SYS", "KEY"]:
+                    response_queue.put((msg_type, msg))  # Store response for main thread
         except Exception as e:
             print(f"[Receiver Error]: {e}")
             break
-
 # Login: username and public key
-username = input("Enter your username: ").strip()
+username = input(f"{Fore.YELLOW}{Style.BRIGHT}Enter your username: ").strip()
 send_with_header(client, username)
 time.sleep(0.05)
 send_with_header(client, my_pub.save_pkcs1("PEM"))
@@ -116,8 +111,8 @@ threading.Thread(target=receive, daemon=True).start()
 
 # Main loop: prompt user, send request, wait for queued response
 while True:
-    to = input("Recipient username: ").strip()
-    msg = input("Message: ").strip()
+    to = input(f"{Fore.YELLOW}{Style.BRIGHT}Recipient username: ").strip()
+    msg = input(f"{Fore.GREEN}{Style.BRIGHT}Message: ").strip()
 
     if msg.lower() == "disconnect":
         send_with_header(client, "disconnect")
@@ -130,7 +125,7 @@ while True:
     try:
         msg_type, payload = response_queue.get(timeout=5)
     except queue.Empty:
-        print("[Error]: No response from server.")
+        print(f"{Fore.RED}{Style.BRIGHT}[Error]: No response from server.")
         continue
 
     if msg_type == "KEY":
@@ -144,10 +139,10 @@ while True:
             try:
                 ack_type, ack_msg = response_queue.get(timeout=5)
                 if ack_type == "SYS":
-                    print(f"[System]: {ack_msg.decode(FORMAT)}")
+                    print(f"{Fore.RED}{Style.BRIGHT}[System]: {ack_msg.decode(FORMAT)}")
             except queue.Empty:
-                print("[Error]: No delivery confirmation.")
+                print(f"{Fore.RED}{Style.BRIGHT}[Error]: No delivery confirmation.")
         except Exception as e:
-            print(f"[Encrypt Error]: {e}")
+            print(f"{Fore.RED}{Style.BRIGHT}[Encrypt Error]: {e}")
     elif msg_type == "SYS":
-        print(f"[System]: {payload.decode(FORMAT)}")
+        print(f"{Fore.RED}{Style.BRIGHT}[System]: {payload.decode(FORMAT)}")

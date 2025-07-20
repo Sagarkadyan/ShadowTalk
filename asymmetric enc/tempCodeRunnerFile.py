@@ -1,1 +1,0 @@
-print(f"{Fore.RED}{Style.BRIGHT}[!] Decryption failed: {e}")
