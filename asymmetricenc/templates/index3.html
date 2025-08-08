@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login & Chat App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Poppins + Inter fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+  <style>
+    :root {
+      --accent: #7494ec;
+      --glass-bg: rgba(255,255,255,0.16);
+      --glass-border: rgba(255,255,255,0.24);
+      --side-bg: rgba(116,148,236, 0.12);
+      --input-bg: #eee;
+      --chat-bg: #e2e2e2;
+      --chat-bg-dark: #232338;
+      --chat-bubble: #f5f6fa;
+      --chat-bubble-user: #7494ec;
+      --chat-bubble-user-text: #fff;
+      --chat-bubble-other: #fff;
+      --chat-bubble-other-text: #232338;
+      --shadow: 0 0 30px rgba(0,0,0,0.15);
+      --sidebar-width: 340px;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: "Poppins", "Inter", sans-serif;
+      margin: 0; padding: 0;
+    }
+    body, html {
+      width: 100vw; height: 100vh;
+      min-height: 100vh;
+      background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
+      overflow: hidden;
+    }
+    #app {
+      width: 100vw; height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hidden { display: none !important; }
+    /* LOGIN/REGISTER UI ------------------------------------ */
+    .container {
+      position: relative;
+      width: 850px;
+      height: 550px;
+      background: var(--glass-bg);
+      margin: 20px;
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(20px);
+      border: 1.5px solid var(--glass-border);
+      z-index: 10;
+    }
+    .container h1{
+      font-size: 36px;
+      margin: -10px 0;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .container p{
+      font-size: 14.5px;
+      margin: 15px 0;
+      color: #232338;
+    }
+    form{ width: 100%; }
+    .form-box{
+      position: absolute;
+      right: 0;
+      width: 50%;
+      height: 100%;
+      background: var(--glass-bg);
+      display: flex;
+      align-items: center;
+      color: #333;
+      text-align: center;
+      padding: 40px;
+      z-index: 1;
+      transition: .6s ease-in-out 1.2s, visibility 0s 1s;
+      backdrop-filter: blur(8px);
+    }
+    .container.active .form-box{ right: 50%; }
+    .form-box.register{ visibility: hidden; }
+    .container.active .form-box.register{ visibility: visible; }
+    .input-box{
+      position: relative;
+      margin: 30px 0;
+    }
+    .input-box input{
+      width: 100%;
+      padding: 13px 50px 13px 20px;
+      background: var(--input-bg);
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      color: #333;
+      font-weight: 500;
+    }
+    .input-box input::placeholder{ color: #888; font-weight: 400; }
+    .input-box i{
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 20px;
+      color: var(--accent);
+    }
+    .forgot-link{ margin: -15px 0 15px; }
+    .forgot-link a{
+      font-size: 14.5px;
+      color: #333;
+    }
+    .btn{
+      width: 100%;
+      height: 48px;
+      background: var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,.07);
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #fff;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .btn:hover { background: #4e6edc; }
+    .social-icons{
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .social-icons a{
+      display: inline-flex;
+      padding: 10px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 24px;
+      color: #333;
+      margin: 0 8px;
+      transition: border .2s, background .2s;
+      background: #f4f8fc;
+    }
+    .social-icons a:hover { border:2px solid var(--accent); background: #f0f6ff; }
+    .toggle-box{
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .toggle-box::before{
+      content: '';
+      position: absolute;
+      left: -250%;
+      width: 300%;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 150px;
+      z-index: 2;
+      transition: 1.8s ease-in-out;
+      opacity: 0.18;
+    }
+    .container.active .toggle-box::before{ left: 50%; }
+    .toggle-panel{
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+      transition: .6s ease-in-out;
+      pointer-events: none;
+      user-select: none;
+    }
+    .toggle-panel.toggle-left{ left: 0; transition-delay: 1.2s; }
+    .container.active .toggle-panel.toggle-left{
+      left: -50%;
+      transition-delay: .6s;
+    }
+    .toggle-panel.toggle-right{ right: -50%; transition-delay: .6s; }
+    .container.active .toggle-panel.toggle-right{
+      right: 0;
+      transition-delay: 1.2s;
+    }
+    .toggle-panel h1{ font-size: 32px; font-weight: 700; color: #fff; }
+    .toggle-panel p{ margin-bottom: 20px; color: #fff;}
+    .toggle-panel .btn{
+      width: 160px;
+      height: 46px;
+      background: transparent;
+      border: 2px solid #fff;
+      box-shadow: none;
+      color: #fff;
+    }
+    /* CHAT UI ------------------------------------ */
+    .chat-app {
+      width: 1050px; height: 700px;
+      background: var(--glass-bg);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: flex;
+      border: 1.5px solid var(--glass-border);
+      backdrop-filter: blur(18px);
+      position: relative;
+    }
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--side-bg);
+      border-right: 2px solid rgba(116,148,236,0.18);
+      padding: 0 0 1rem 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 1;
+    }
+    .sidebar-header {
+      padding: 1.2rem 1.3rem 0.5rem 1.3rem;
+    }
+    .search-bar {
+      width: 100%;
+      padding: 0.7rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      background: #edf1fa;
+      color: #333;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 10px rgba(116,148,236,.04);
+    }
+    .active-users-carousel {
+      display: flex;
+      gap: 0.6rem;
+      overflow-x: auto;
+      padding: 0.3rem 1.2rem 0.7rem 1.2rem;
+      margin-bottom: 0.1rem;
+    }
+    .active-user-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      object-fit: cover;
+      background: #fff;
+    }
+    .sidebar-nav {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 1rem;
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #4660b2;
+      font-size: 15px;
+      padding: 0.55rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
+    .nav-btn.active, .nav-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    .user-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.1rem 0.5rem;
+      border-radius: 8px;
+    }
+    .user-list-item {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.57rem 0.6rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 0.3rem;
+      position: relative;
+      background: transparent;
+    }
+    .user-list-item:hover, .user-list-item.active {
+      background: rgba(116,148,236,0.10);
+    }
+    .user-list-item .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid var(--accent);
+      background: #fff;
+    }
+    .user-list-item .user-info {
+      flex: 1; min-width: 0;
+    }
+    .user-list-item .username {
+      font-weight: 600;
+      font-size: 15px;
+      color: #232338;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .user-list-item .last-message {
+      font-size: 13px;
+      color: #7494ec;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    .user-list-item .timestamp {
+      font-size: 12px;
+      color: #aac2f8;
+      text-align: right;
+      min-width: 56px;
+    }
+    .typing-indicator {
+      font-size: 12px;
+      color: var(--accent);
+      font-style: italic;
+      margin-left: 0.5rem;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink {
+      0%, 50%, 100% { opacity: 1; }
+      25%, 75% { opacity: 0.1; }
+    }
+    /* Main Chat Window */
+    .main-chat-window {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--glass-bg);
+      position: relative;
+      min-width: 0;
+      padding: 0;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.1rem 2rem 1.05rem 1.5rem;
+      border-bottom: 1.5px solid #c3d2f0;
+      background: var(--glass-bg);
+      min-height: 80px;
+      box-shadow: 0 2px 10px rgba(116,148,236,.04);
+    }
+    .chat-header .avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+    }
+    .chat-header .username {
+      font-size: 18px;
+      font-weight: 600;
+      color: #232338;
+    }
+    .chat-header .status {
+      font-size: 13px;
+      color: var(--accent);
+      margin-left: 0.7rem;
+      font-weight: 500;
+    }
+    /* Messages */
+    .messages {
+      flex: 1;
+      padding: 1.1rem 2.2rem 1.1rem 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      background: var(--glass-bg);
+      animation: fadeIn 0.4s;
+      min-height: 200px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0;}
+      to { opacity: 1;}
+    }
+    .message-group-date {
+      text-align: center;
+      color: #3b4c7f;
+      font-size: 13px;
+      margin: 1.2rem 0 0.3rem 0;
+      font-weight: 600;
+      opacity: 0.8;
+    }
+    .message-row {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .message-row.right_aligned {
+      align-items: flex-end;
+    }
+    .message-bubble {
+      display: flex;
+      align-items: flex-end;
+      gap: 0.5rem;
+      background: var(--chat-bubble-other);
+      color: var(--chat-bubble-other-text);
+      border-radius: 16px 16px 16px 7px;
+      padding: 0.63rem 1.15rem;
+      max-width: 70%;
+      font-size: 15px;
+      line-height: 1.6;
+      position: relative;
+      box-shadow: 0 2px 10px rgba(116,148,236,.07);
+      word-break: break-word;
+      animation: fadeIn 0.3s;
+      margin-bottom: 0.1rem;
+      border: 1.2px solid #e6edfc;
+      background: #fff;
+    }
+    .message-row.right_aligned .message-bubble {
+      background: var(--chat-bubble-user);
+      color: var(--chat-bubble-user-text);
+      border-radius: 16px 16px 7px 16px;
+      align-self: flex-end;
+      border: 1.2px solid #4e6edc;
+    }
+    .message-meta {
+      font-size: 12px;
+      color: #aac2f8;
+      margin-top: 2px;
+      display: flex;
+      gap: 0.7rem;
+      align-items: center;
+      opacity: 0.86;
+    }
+    .attachment-preview {
+      margin-top: 4px;
+      max-width: 170px;
+      border-radius: 8px;
+      background: #f6f8ff;
+      padding: 3px;
+      display: block;
+      border: 1.2px solid #e6edfc;
+    }
+    .message-options {
+      position: absolute;
+      top: 3px;
+      right: 7px;
+      display: flex;
+      gap: 6px;
+      opacity: 0.75;
+    }
+    .message-options button {
+      background: none;
+      border: none;
+      color: #7494ec;
+      cursor: pointer;
+      font-size: 15px;
+      margin-left: 2px;
+      transition: color 0.15s;
+    }
+    .message-options button:hover {
+      color: #232338;
+    }
+    /* Chat input box */
+    .chat-input-box {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 1.5rem;
+      border-top: 1.5px solid #c3d2f0;
+      background: var(--glass-bg);
+      position: relative;
+      min-height: 76px;
+    }
+    .text-input {
+      flex: 1;
+      background: #edf1fa;
+      border: none;
+      outline: none;
+      padding: 0.9rem 1.15rem;
+      color: #333;
+      border-radius: 8px;
+      font-size: 16px;
+      margin: 0 0.4rem;
+      box-shadow: 0 2px 8px rgba(116,148,236,.05);
+    }
+    .emoji-btn, .send-btn, .file-upload-label {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #7494ec;
+      cursor: pointer;
+      margin-right: 0.1rem;
+      transition: color 0.2s;
+    }
+    .emoji-btn:hover, .send-btn:hover, .file-upload-label:hover {
+      color: #4e6edc;
+    }
+    .file-upload { display: none; }
+    .file-upload-label { font-size: 22px; }
+    /* Drag & Drop Area (glass) */
+    #drop-area {
+      border: 2px dashed #aac2f8;
+      border-radius: 13px;
+      width: 340px;
+      height: 90px;
+      color: #7494ec;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 18px auto 0 auto;
+      transition: border-color 0.3s, background 0.3s;
+      background: rgba(116,148,236,0.07);
+      font-size: 17px;
+      font-weight: 500;
+    }
+    #drop-area.highlight {
+      border-color: #4e6edc;
+      color: #232338;
+      background: #e7eef7;
+    }
+    #result {
+      text-align: center;
+      margin-top: 10px;
+      color: #7494ec;
+      font-size: 15px;
+      min-height: 24px;
+      font-weight: 500;
+    }
+    .dark-mode-toggle {
+      position: absolute;
+      top: 16px;
+      right: 22px;
+      z-index: 10;
+    }
+    .dark-mode-toggle input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    @media (max-width: 1200px) {
+      .chat-app { width: 99vw; }
+      .container { width: 99vw; }
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 70px; }
+      .sidebar-header, .active-users-carousel, .sidebar-nav { display: none; }
+      .user-list-item .user-info, .user-list-item .timestamp { display: none; }
+      .user-list-item .avatar { width: 38px; height: 38px;}
+      .main-chat-window { padding-left: 0; }
+      .chat-header { padding-left: 1rem; }
+      .messages, .chat-input-box { padding-left: 1rem; padding-right: 1rem;}
+      #drop-area { width: 92vw; }
+    }
+    @media (max-width: 650px){
+      .container, .chat-app { height: calc(100vh - 40px); }
+      .form-box{ bottom: 0; width: 100%; height: 70%; }
+      .container.active .form-box{ right: 0; bottom: 30%; }
+      .toggle-box::before{ left: 0; top: -270%; width: 100%; height: 300%; border-radius: 20vw; }
+      .container.active .toggle-box::before{ left: 0; top: 70%; }
+      .container.active .toggle-panel.toggle-left{ left: 0; top: -30%; }
+      .toggle-panel{ width: 100%; height: 30%; }
+      .toggle-panel.toggle-left{ top: 0; }
+      .toggle-panel.toggle-right{ right: 0; bottom: -30%; }
+      .container.active .toggle-panel.toggle-right{ bottom: 0; }
+      #drop-area { width: 98vw; }
+    }
+    @media (max-width: 500px) {
+      .container, .chat-app { min-width: 100vw; }
+      .form-box { padding: 18px; }
+      .toggle-panel h1{font-size: 24px;}
+      #drop-area { width: 96vw; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- LOGIN/REGISTER UI -->
+  <div class="container" id="login-container">
+    <div class="form-box login">
+      <form id="login-form" autocomplete="off">
+        <input type="hidden" name="form_type" value="login">
+        <h1>Login</h1>
+        <div class="input-box">
+          <input type="text" name="username1" placeholder="Username" required>
+          <i class='bx bxs-user'></i>
+        </div>
+        <div class="input-box">
+          <input type="password"  name="password1" placeholder="Password" required>
+          <i class='bx bxs-lock-alt'></i>
+        </div>
+        <div class="forgot-link">
+          <a href="#">Forgot Password?</a>
+        </div>
+        <button type="submit" class="btn">Login</button>
+        <p>or login with social platforms</p>
+        <div class="social-icons">
+          <a href="#"><i class='bx bxl-google'></i></a>
+          <a href="#"><i class='bx bxl-facebook'></i></a>
+          <a href="#"><i class='bx bxl-github'></i></a>
+          <a href="#"><i class='bx bxl-linkedin'></i></a>
+        </div>
+      </form>
+    </div>
+    <div class="form-box register">
+      <form id="register-form" autocomplete="off">
+        <input type="hidden" name="form_type" value="register">
+        <h1>Registration</h1>
+        <div class="input-box">
+          <input type="text" name="username" placeholder="Username" required>
+          <i class='bx bxs-user'></i>
+        </div>
+        <div class="input-box">
+          <input type="email" name="email" placeholder="Email" required>
+          <i class='bx bxs-envelope'></i>
+        </div>
+        <div class="input-box">
+          <input type="password" name="password" placeholder="Password" required>
+          <i class='bx bxs-lock-alt'></i>
+        </div>
+        <button type="submit" class="btn">Register</button>
+        <p style="color:#7494ec"></p>
+        <div class="social-icons">
+          <a href="#"><i class='bx bxl-google'></i></a>
+          <a href="#"><i class='bx bxl-facebook'></i></a>
+          <a href="#"><i class='bx bxl-github'></i></a>
+          <a href="#"><i class='bx bxl-linkedin'></i></a>
+        </div>
+      </form>
+    </div>
+    <div class="toggle-box">
+      <div class="toggle-panel toggle-left">
+        <h1>Hello, Welcome!</h1>
+        <p>Don't have an account?</p>
+        <button class="btn register-btn" type="button">Register</button>
+      </div>
+      <div class="toggle-panel toggle-right">
+        <h1>Welcome Back!</h1>
+        <p>Already have an account?</p>
+        <button class="btn login-btn" type="button">Login</button>
+      </div>
+    </div>
+  </div>
+  <!-- CHAT UI -->
+  <div class="chat-app hidden" id="chat-app">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <input type="text" class="search-bar" placeholder="Search users…">
+      </div>
+      <div class="active-users-carousel" id="active-users-carousel">
+        <!-- Active users avatars here -->
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-btn active">Chats</button>
+        <button class="nav-btn">Settings</button>
+      </nav>
+      <div class="user-list" id="user-list">
+        <!-- User list items here -->
+      </div>
+    </aside>
+    <main class="main-chat-window">
+      <header class="chat-header" id="chat-header">
+        <!-- Chat header: avatar, username, status -->
+      </header>
+      <section class="messages" id="messages">
+        <!-- Messages will be rendered here -->
+      </section>
+      <!-- DRAG & DROP FILE METADATA AREA -->
+      <div id="drop-area">Drag & drop file here (metadata only)</div>
+      <div id="result"></div>
+      <!-- Chat input box -->
+      <footer class="chat-input-box">
+        <button class="emoji-btn" title="Pick emoji">😊</button>
+        <input type="file" id="file-upload" class="file-upload" multiple>
+        <label for="file-upload" class="file-upload-label" title="Attach file">📎</label>
+        <input type="text" id="message-input" class="text-input" placeholder="Type a message…">
+        <button class="send-btn" id="send-btn" title="Send"><span>➤</span></button>
+      </footer>
+      <div class="dark-mode-toggle">
+        <label>
+          <input type="checkbox" id="toggle-dark-mode" checked>
+          🌙
+        </label>
+      </div>
+    </main>
+  </div>
+</div>
+<script>
+/* LOGIN/REGISTER TOGGLE (from login.js) */
+const container = document.getElementById('login-container');
+const registerBtn = container.querySelector('.register-btn');
+const loginBtn = container.querySelector('.login-btn');
+registerBtn.addEventListener('click', () => { container.classList.add('active'); });
+loginBtn.addEventListener('click', () => { container.classList.remove('active'); });
+
+/* FAKE "LOGIN" STATE CHANGE */
+document.getElementById('login-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  document.getElementById('login-container').classList.add('hidden');
+  document.getElementById('chat-app').classList.remove('hidden');
+});
+document.getElementById('register-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  document.getElementById('login-container').classList.remove('active');
+  // Optionally show a "registration successful" message here
+});
+/* CHAT UI DATA & RENDERING --------------------------------*/
+const users = [
+  { id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg", username: "Alice", last_message: "See you soon!", timestamp: "12:30", typing: false },
+  { id: 2, avatar: "https://randomuser.me/api/portraits/women/45.jpg", username: "Bob", last_message: "Got it, thanks!", timestamp: "12:29", typing: true },
+  { id: 3, avatar: "https://randomuser.me/api/portraits/men/55.jpg", username: "Charlie", last_message: "Let's meet at 3pm.", timestamp: "12:25", typing: false }
+];
+const activeUsers = [
+  {id: 1, avatar: "https://randomuser.me/api/portraits/men/32.jpg", username: "Alice"},
+  {id: 2, avatar: "https://randomuser.me/api/portraits/women/45.jpg", username: "Bob"},
+  {id: 3, avatar: "https://randomuser.me/api/portraits/men/55.jpg", username: "Charlie"},
+  {id: 4, avatar: "https://randomuser.me/api/portraits/women/65.jpg", username: "Dana"},
+  {id: 5, avatar: "https://randomuser.me/api/portraits/men/15.jpg", username: "Evan"}
+];
+const messagesByDate = [
+  {
+    date: "Today",
+    messages: [
+      { sender: "user", content: "Hey Bob! 👋", timestamp: "12:28", attachments: [] },
+      { sender: "Bob", content: "Hi! How are you?", timestamp: "12:29", attachments: [] },
+      { sender: "user", content: "I'm good! Check this image.", timestamp: "12:29",
+        attachments: [{type: "image", url: "https://placekitten.com/150/100"}]
+      },
+      { sender: "Bob", content: "Aww, cute! 😻", timestamp: "12:30", attachments: [] }
+    ]
+  }
+];
+function escapeHTML(str) {
+  return String(str).replace(/[&<>"']/g, function (m) {
+    return ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'})[m];
+  });
+}
+function renderActiveUsers() {
+  const el = document.getElementById('active-users-carousel');
+  el.innerHTML = activeUsers.map(u =>
+    `<img class="active-user-avatar" src="${u.avatar}" alt="${u.username}" title="${u.username}">`
+  ).join('');
+}
+function renderUserList() {
+  const ul = document.getElementById('user-list');
+  ul.innerHTML = users.map(u => `
+    <div class="user-list-item${u.id === 2 ? ' active' : ''}">
+      <img class="avatar" src="${u.avatar}" alt="${u.username}">
+      <div class="user-info">
+        <div class="username">${escapeHTML(u.username)}</div>
+        <div class="last-message">${escapeHTML(u.last_message)}</div>
+      </div>
+      <div class="timestamp">${escapeHTML(u.timestamp)}</div>
+      ${u.typing ? '<span class="typing-indicator">typing…</span>' : ''}
+    </div>
+  `).join('');
+}
+function renderChatHeader() {
+  const user = users[1]; // Bob (active)
+  const el = document.getElementById('chat-header');
+  el.innerHTML = `
+    <img class="avatar" src="${user.avatar}" alt="${user.username}">
+    <div>
+      <div class="username">${escapeHTML(user.username)}</div>
+      <div class="status">online</div>
+    </div>
+  `;
+}
+function renderMessages() {
+  const msgSection = document.getElementById('messages');
+  msgSection.innerHTML = messagesByDate.map(group => `
+    <div class="message-group-date">${escapeHTML(group.date)}</div>
+    ${group.messages.map(msg => `
+      <div class="message-row ${msg.sender === "user" ? "right_aligned" : "left_aligned"}">
+        <div class="message-bubble">
+          ${escapeHTML(msg.content)}
+          ${msg.attachments.map(att => {
+            if(att.type === "image") {
+              return `<img class="attachment-preview" src="${att.url}" alt="attachment">`;
+            }
+            return '';
+          }).join('')}
+          <div class="message-options">
+            <button title="Reply">↩️</button>
+            <button title="Delete">🗑️</button>
+          </div>
+        </div>
+        <div class="message-meta">
+          <span>${escapeHTML(msg.timestamp)}</span>
+        </div>
+      </div>
+    `).join('')}
+  `).join('');
+}
+function sendMessage() {
+  const input = document.getElementById('message-input');
+  let content = input.value.trim();
+  if(!content) return;
+  messagesByDate[0].messages.push({
+    sender: "user",
+    content,
+    timestamp: (new Date()).toTimeString().slice(0,5),
+    attachments: []
+  });
+  input.value = '';
+  renderMessages();
+  scrollMessagesToBottom();
+}
+function scrollMessagesToBottom() {
+  const msgSection = document.getElementById('messages');
+  setTimeout(() => msgSection.scrollTop = msgSection.scrollHeight, 30);
+}
+function setupEmojiPicker() {
+  document.querySelector('.emoji-btn').addEventListener('click', () => {
+    const input = document.getElementById('message-input');
+    input.value += '😊';
+    input.focus();
+  });
+}
+function setupFileUpload() {
+  document.getElementById('file-upload').addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      if(file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          messagesByDate[0].messages.push({
+            sender: "user",
+            content: "",
+            timestamp: (new Date()).toTimeString().slice(0,5),
+            attachments: [{type: "image", url: ev.target.result}]
+          });
+          renderMessages();
+          scrollMessagesToBottom();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    this.value = "";
+  });
+}
+function setupDarkModeToggle() {
+  const input = document.getElementById('toggle-dark-mode');
+  input.addEventListener('change', function() {
+    // Optional: implement full dark mode here
+    document.body.style.background = this.checked ? "linear-gradient(90deg, #e2e2e2, #c9d6ff)" : "#232338";
+  });
+}
+function setupSendButton() {
+  document.getElementById('send-btn').addEventListener('click', sendMessage);
+  document.getElementById('message-input').addEventListener('keydown', function(e) {
+    if(e.key === 'Enter') sendMessage();
+  });
+}
+/* Drag & Drop Metadata Area */
+const dropArea = document.getElementById('drop-area');
+const result = document.getElementById('result');
+['dragenter', 'dragover'].forEach(eventName =>
+  dropArea.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.add('highlight');
+  }, false)
+);
+['dragleave', 'drop'].forEach(eventName =>
+  dropArea.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropArea.classList.remove('highlight');
+  }, false)
+);
+dropArea.addEventListener('drop', (e) => {
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    const file = files[0];
+    const metadata = {
+      name: file.name,
+      type: file.type,
+      size: file.size
+    };
+    // sendMetadata(metadata); // Uncomment to actually send
+    result.innerText = `Metadata: ${JSON.stringify(metadata, null, 2)}`;
+  }
+});
+/* INIT CHAT RENDER */
+function main() {
+  renderActiveUsers();
+  renderUserList();
+  renderChatHeader();
+  renderMessages();
+  setupEmojiPicker();
+  setupFileUpload();
+  setupDarkModeToggle();
+  setupSendButton();
+  scrollMessagesToBottom();
+}
+window.addEventListener('DOMContentLoaded', main);
+</script>
+</body>
+</html>

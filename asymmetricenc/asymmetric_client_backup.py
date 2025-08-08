@@ -3,7 +3,7 @@ import threading
 import time
 import rsa
 import queue
-from colorama import Fore, Style,  Back
+
 
 HEADER = 4
 PORT = 24179  # Playit assigned port
@@ -16,33 +16,12 @@ ADDR = (SERVER, PORT)
 
 
 
-
-def print_banner():
-    banner = r"""
-  _____ ___ __ __ ____ ___    _____  __   ____    _______   ____  _      __  _ 
- / ___/|  T  T /    T|   \   /   \ |  T__T  T    |      T /    T| T    |  l/ ]
-(   \_ |  l  |Y  o  ||    \ Y     Y|  |  |  |    |      |Y  o  || |    |  ' / 
- \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \ 
- /  \ ||  |  ||  _  ||     ||     |l  `  '  !      |  |  |  _  ||     T|     Y
- \    ||  |  ||  |  ||     |l     ! \      /       |  |  |  |  ||     ||  .  |
-  \___jl__j__jl__j__jl_____j \___/   \_/\_/        l__j  l__j__jl_____jl__j\_j
-                                                                              
-
-
-                 ENCRYPTED CYBERLINK — SHADOWTALK v1.0
-
-    """
-    
-    print(Fore.CYAN + Style.BRIGHT+ banner + Style.RESET_ALL)
-print_banner()#generate a new key every time 
 pubkey, privkey = rsa.newkeys(512)
 with open("public.pem", "wb") as f:
     f.write(pubkey.save_pkcs1("PEM"))
 
 with open("private.pem", "wb") as f:
     f.write(privkey.save_pkcs1("PEM"))
-
-print(f"{Fore.GREEN}{Style.DIM}Keys generated: public.pem, private.pem")
 
 
 
@@ -91,7 +70,7 @@ def receive():
                 msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
                 encrypted_msg = recv_exact(client, msg_len)
                 decrypted = rsa.decrypt(encrypted_msg, my_priv).decode(FORMAT)
-                print(f"\n{Fore.GREEN}{Style.BRIGHT}[{sender}]: {decrypted}")
+                print(f"\n[{sender}]: {decrypted}")
             else:
                 msg_len = int(recv_exact(client, HEADER).decode(FORMAT).strip())
                 msg = recv_exact(client, msg_len)
@@ -101,7 +80,7 @@ def receive():
             print(f"[Receiver Error]: {e}")
             break
 # Login: username and public key
-username = input(f"{Fore.YELLOW}{Style.BRIGHT}Enter your username: ").strip()
+username = input(f"Enter your username: ").strip()
 send_with_header(client, username)
 time.sleep(0.05)
 send_with_header(client, my_pub.save_pkcs1("PEM"))
@@ -111,8 +90,8 @@ threading.Thread(target=receive, daemon=True).start()
 
 # Main loop: prompt user, send request, wait for queued response
 while True:
-    to = input(f"{Fore.YELLOW}{Style.BRIGHT}Recipient username: ").strip()
-    msg = input(f"{Fore.GREEN}{Style.BRIGHT}Message: ").strip()
+    to = input(f"Recipient username: ").strip()
+    msg = input(f"Message: ").strip()
 
     if msg.lower() == "disconnect":
         send_with_header(client, "disconnect")
@@ -125,7 +104,7 @@ while True:
     try:
         msg_type, payload = response_queue.get(timeout=5)
     except queue.Empty:
-        print(f"{Fore.RED}{Style.BRIGHT}[Error]: No response from server.")
+        print(f"[Error]: No response from server.")
         continue
 
     if msg_type == "KEY":
@@ -139,10 +118,10 @@ while True:
             try:
                 ack_type, ack_msg = response_queue.get(timeout=5)
                 if ack_type == "SYS":
-                    print(f"{Fore.RED}{Style.BRIGHT}[System]: {ack_msg.decode(FORMAT)}")
+                    print(f"[System]: {ack_msg.decode(FORMAT)}")
             except queue.Empty:
-                print(f"{Fore.RED}{Style.BRIGHT}[Error]: No delivery confirmation.")
+                print(f"[Error]: No delivery confirmation.")
         except Exception as e:
-            print(f"{Fore.RED}{Style.BRIGHT}[Encrypt Error]: {e}")
+            print(f"[Encrypt Error]: {e}")
     elif msg_type == "SYS":
-        print(f"{Fore.RED}{Style.BRIGHT}[System]: {payload.decode(FORMAT)}")
+        print(f"[System]: {payload.decode(FORMAT)}")
