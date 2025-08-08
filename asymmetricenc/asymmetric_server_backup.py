@@ -2,6 +2,7 @@ import socket
 import threading
 
 import sqlite3
+import database
 
 # Connect (creates the database file if it doesn't exist)
 conns = sqlite3.connect('users.db')
