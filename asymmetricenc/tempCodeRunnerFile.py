@@ -7,7 +7,7 @@ import time
 import rsa
 import queue
 import json 
-import compressor
+
 
 HEADER = 4
 PORT = 24179  # Playit assigned port
@@ -45,6 +45,9 @@ def login():
         "username": username,
         "password": password
     }
+    json_str = json.dumps(firebase)
+    json_bytes = json_str.encode('utf-8')
+    send_with_header(client, json_bytes)
     return jsonify({'success': False, 'error': 'Invalid username'}), 400
 
 @app.route('/register', methods=['POST'])
@@ -61,7 +64,10 @@ def register():
         "password": password,
         "pub_key": my_pub.save_pkcs1("PEM").decode('utf-8')
     }
-    send_with_header(client,firebase)
+    json_str = json.dumps(firebase)
+    json_bytes = json_str.encode('utf-8')
+
+    send_with_header(client,json_bytes)
     return jsonify({'success': True})
 
     

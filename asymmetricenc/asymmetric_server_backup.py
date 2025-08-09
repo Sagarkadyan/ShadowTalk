@@ -58,7 +58,7 @@ def check_password(cursor, name, user_password):
             return "wrong pass"
     except Exception as e:
         return f"invalid pass: {e}"
-
+ 
 def update_pss(name, new_passwd):
     try:
         cursor.execute(
@@ -75,66 +75,58 @@ def update_pss(name, new_passwd):
         return f"error: {e}"
 
 def handle_client(conn, addr):
-
-    header_raw = recv_exact(conn, HEADER)
-    msg_len = int(header_raw.decode(FORMAT).strip())
-    data_bytes = recv_exact(conn, msg_len)
-    # Decode JSON
     try:
-    data = json.loads(data_bytes.decode(FORMAT))
-    if data.get('type') == 'registration':
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        pub_key = data.get('pub_key')
-        adder(username, email, password, pub_key)
-        print(f"[+] {username} registered.")
-        client_keys[username] = pub_key
-        clients[username] = conn
-    elif data.get('type') == 'login':
-        username = data.get('username')
-        password = data.get('password')
-        password(usename)
+        while True:
+            try:
+                header_raw = recv_exact(conn, HEADER)
+                msg_len = int(header_raw.decode(FORMAT).strip())
+                data_bytes = recv_exact(conn, msg_len)
+    # Decode JSON
+                try:
+                    data = json.loads(data_bytes.decode(FORMAT))
+                    if data.get('type') == 'registration':
+                        username = data.get('username')
+                        email = data.get('email')
+                        password = data.get('password')
+                        pub_key = data.get('pub_key')
+                        adder(username, email, password, pub_key)
+                        print(f"[+] {username} registered.")
+                        client_keys[username] = pub_key
+                        clients[username] = conn
 
-    except Exception as e:
-        print(f"[ERR] Failed to parse registration JSON: {e}")
-        conn.close()
-    return   while True:
-            msg_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
-            msg = recv_exact(conn, msg_len)
+            
+        
 
-            if msg.startswith(b"REQUESTKEY:"):
-                recipient = msg.decode(FORMAT).split(":")[1]
-                if recipient in client_keys:
-                    conn.send(b"KEY")
-                    send_with_header(conn, client_keys[recipient])
-                else:
-                    conn.send(b"SYS")
-                    send_with_header(conn, "User not found")
+     
+                    elif data.get('type') == 'login':
+                        username = data.get('username')
+                        password = data.get('password')
+                        check_password(cursor,usename,password)
+                    
+        
+                except Exception as e:
+                    print(f"[ERR] Failed to parse registration JSON: {e}")
+                    conn.close()
+                    return
 
-            elif msg.startswith(b"SENDMSG:"):
-                parts = msg.split(b":", 2)
-                recipient = parts[1].decode(FORMAT)
-                encrypted = parts[2]
-                if recipient in clients:
-                    clients[recipient].send(b"MSG")
-                    send_with_header(clients[recipient], username)
-                    send_with_header(clients[recipient], encrypted)
-
-                    conn.send(b"SYS")
-                    send_with_header(conn, "Message delivered")
-                else:
-                    conn.send(b"SYS")
-                    send_with_header(conn, "Recipient not online")
-
-            elif msg.decode(FORMAT).strip() == "disconnect":
-                break
-            elif msg == b"LISTUSERS":
-                conn.send(b"USR")
-                send_with_header(conn, "\n".join(client_keys.keys()))
-    except Exception as e:
-        print(f"[ERR] {username}: {e}")
-   
+                    while True:
+            
+                        try:
+                            header_raw = recv_exact(conn, HEADER)
+                            msg_len = int(header_raw.decode(FORMAT).strip())
+                            msg = recv_exact(conn, msg_len)
+                            # ...handle your message here...
+                        except ConnectionError:
+                            print(f"[{addr}] Client disconnected")
+                            break
+                        except Exception as e:
+                            print(f"[{addr}] Unexpected error: {e}")
+                            break
+            except Exception as e:
+                        print(f"[{addr}] Error during handling: {e}")
+    finally:
+                        conn.close()
+                        print(f"[{addr}] Connection closed")
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 server.listen()
