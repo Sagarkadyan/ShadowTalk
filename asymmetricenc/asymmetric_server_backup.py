@@ -1,11 +1,11 @@
 import socket
 import threading
-
+import json
 import sqlite3
 import database
 
 # Connect (creates the database file if it doesn't exist)
-conns = sqlite3.connect('users.db')
+conns = sqlite3.connect('users.db' ,check_same_thread=False)
 cursor = conns.cursor()
 
 HEADER = 4
@@ -32,31 +32,32 @@ def recv_exact(conn, num_bytes):
             raise ConnectionError("Disconnected")
         data += packet
     return data
-def adder(name,email,password,cypher_text):
+def adder(name, email, password, cypher_text):
     try:
         cursor.execute(
             "INSERT INTO users (name, email, password, cypher_text) VALUES (?, ?, ?, ?)",
             (name, email, password, cypher_text)
         )
         conns.commit()
-        return("Inserted successfully!")
+        return "Inserted successfully!"
     except sqlite3.IntegrityError:
-        return("Email already exists.")
+        return "Email already exists."
 
-
-def password(name):
+def check_password(cursor, name, user_password):
     try:
         cursor.execute(
             "SELECT password FROM users WHERE name = ?", (name,)
         )
-        result=cursor.fetchone()
-        if result:
-            return(result[0])
-        else :
-            return("user does not exist")    
-        
-    except:
-        return("error")   
+        row = cursor.fetchone()
+        if row is None:
+            return "user not found"
+        stored_password = row[0]
+        if stored_password == user_password:
+            return "correct pass"
+        else:
+            return "wrong pass"
+    except Exception as e:
+        return f"invalid pass: {e}"
 
 def update_pss(name, new_passwd):
     try:
@@ -74,25 +75,31 @@ def update_pss(name, new_passwd):
         return f"error: {e}"
 
 def handle_client(conn, addr):
-    username = None
+
+    header_raw = recv_exact(conn, HEADER)
+    msg_len = int(header_raw.decode(FORMAT).strip())
+    data_bytes = recv_exact(conn, msg_len)
+    # Decode JSON
     try:
-        username_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
-        username = recv_exact(conn, username_len).decode(FORMAT)
+    data = json.loads(data_bytes.decode(FORMAT))
+    if data.get('type') == 'registration':
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
+        pub_key = data.get('pub_key')
+        adder(username, email, password, pub_key)
+        print(f"[+] {username} registered.")
+        client_keys[username] = pub_key
+        clients[username] = conn
+    elif data.get('type') == 'login':
+        username = data.get('username')
+        password = data.get('password')
+        password(usename)
 
-        email_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
-        email = recv_exact(conn, email_len).decode(FORMAT)
-        
-        password_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
-        password = recv_exact(conn, password_len).decode(FORMAT)
-
-        key_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
-        pub_key = recv_exact(conn, key_len).decode(FORMAT)
-        
-        adder(username,email,password,pub_key)
-        
-        print(f"[+] {username} connected.")
-
-        while True:
+    except Exception as e:
+        print(f"[ERR] Failed to parse registration JSON: {e}")
+        conn.close()
+    return   while True:
             msg_len = int(recv_exact(conn, HEADER).decode(FORMAT).strip())
             msg = recv_exact(conn, msg_len)
 

@@ -1,7 +1,0 @@
-socket
-threading
-time
-rsa
-queue
-colorama 
-cryptography

@@ -18,10 +18,10 @@ CREATE TABLE IF NOT EXISTS users (
 conn.commit()
 
 # Demonstration: Insert a sample user (in production, hash the password!)
-name = "saar"
-email = "le@xiimpjjiole.com"
-password = "up_oonjjseure_password"   # Replace with a hash in production!
-cypher_text = "ECl=]]PTED_MESAGE_HERE"
+name = "sa"
+email = "e@xiimjjiole.com"
+password = "up_njjseure_password"   # Replace with a hash in production!
+cypher_text = "l=]]PTED_MESAGE_HERE"
 new_passwd="saar12,"
 def adder(name,email,password,cypher_text):
     try:
@@ -34,21 +34,26 @@ def adder(name,email,password,cypher_text):
     except sqlite3.IntegrityError:
         return("Email already exists.")
 
-
-def password(name):
+#hi=adder(name,email,password,cypher_text)
+#print(hi)
+def check_password(cursor, name, user_password):
     try:
         cursor.execute(
             "SELECT password FROM users WHERE name = ?", (name,)
         )
-        result=cursor.fetchone()
-        if result:
-            return(result[0])
-        else :
-            return("user does not exist")    
-        
-    except:
-        return("error")   
+        row = cursor.fetchone()
+        if row is None:
+            return "user not found"
+        stored_password = row[0]
+        if stored_password == user_password:
+            return "correct pass"
+        else:
+            return "wrong pass"
+    except Exception as e:
+        return f"invalid pass: {e}"
 
+hj=check_password(cursor,name,password)
+print(hj)
 def update_pss(name, new_passwd):
     try:
         cursor.execute(

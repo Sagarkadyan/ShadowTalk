@@ -1,14 +1,13 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
-
 import os
 import socket
 import threading
 import time
 import rsa
 import queue
-
-
+import json 
+import compressor
 
 HEADER = 4
 PORT = 24179  # Playit assigned port
@@ -23,15 +22,10 @@ client.connect(ADDR)
 
 
 
-# 
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app)
-
-messages = []    # List of dicts: {'sender': username, 'content': ..., 'timestamp': ...}
-users = set()    # Registered usernames
-
-
 
 
 @app.route('/', methods=['GET'])
@@ -46,10 +40,11 @@ def login():
     username = data.get('username1')
     password = data.get('password1')
     # For demo: any username/password is valid if username not blank
-    if username:
-        session['username'] = username
-        users.add(username)
-        return jsonify({'success': True, 'username': username})
+    firebase={
+        "type": "login",
+        "username": username,
+        "password": password
+    }
     return jsonify({'success': False, 'error': 'Invalid username'}), 400
 
 @app.route('/register', methods=['POST'])
@@ -58,14 +53,15 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    # For demo: accept anything not blank & not duplicate
-    send_with_header(client,username)
-    time.sleep(0.005)
-    send_with_header(client,email)
-    time.sleep(0.005)
-    send_with_header(client,password)
-    time.sleep(0.005)
-    send_with_header(client,my_pub.save_pkcs1("PEM"))
+    
+    firebase={
+        "type": "registration",
+        "username": username,
+        "email": email,
+        "password": password,
+        "pub_key": my_pub.save_pkcs1("PEM").decode('utf-8')
+    }
+    send_with_header(client,firebase)
     return jsonify({'success': True})
 
     
@@ -92,6 +88,10 @@ def get_messages():
 @app.route('/file-metadata', methods=['POST'])
 def file_metadata():
     data = request.json
+    if size >= 52428800:
+        if type ==  mp4:
+            compressor.video_comp(path)
+    
     # Just echo the received metadata for demo
     return jsonify({'received': data})
 
