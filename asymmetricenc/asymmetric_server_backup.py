@@ -2,7 +2,8 @@ import socket
 import threading
 import json
 import sqlite3
-import database
+
+import queue
 
 # Connect (creates the database file if it doesn't exist)
 conns = sqlite3.connect('users.db' ,check_same_thread=False)
@@ -17,6 +18,7 @@ ADDR = (SERVER, PORT)
 clients = {}
 client_keys = {}
 
+ 
 def send_with_header(conn, data):
     if isinstance(data, str):
         data = data.encode(FORMAT)
@@ -49,9 +51,7 @@ def check_password(cursor, name, user_password):
             "SELECT password FROM users WHERE name = ?", (name,)
         )
         row = cursor.fetchone()
-        if row is None:
-            return "user not found"
-        stored_password = row[0]
+        
         if stored_password == user_password:
             return "correct pass"
         else:
@@ -92,7 +92,7 @@ def handle_client(conn, addr):
 
                 # Ignore zero or negative lengths
                 if msg_len <= 0:
-                    print(f"[{addr}] Empty length, skipping...")
+                    #print(f"[{addr}] Empty length, skipping...")
                     continue
 
                 # Read the message body
@@ -122,8 +122,14 @@ def handle_client(conn, addr):
                 elif data.get('type') == 'login':
                     username = data.get('username')
                     password = data.get('password')
-                    check_password(cursor, username, password)
-
+                    passwd_result=check_password(cursor, username, password)
+                    firefox={
+                        "type":"login_ans",
+                        "answer":passwd_result
+                    }
+                    json_str = json.dumps(firefox)
+                    json_bytes = json_str.encode('utf-8')
+                    send_with_header(conn, json_bytes)
             except ConnectionError:
                 print(f"[{addr}] Client disconnected.")
                 break

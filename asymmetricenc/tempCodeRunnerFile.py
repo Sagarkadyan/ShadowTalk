@@ -31,7 +31,7 @@ CORS(app)
 @app.route('/', methods=['GET'])
 def home():
     if 'username' in session:
-        return render_template('chat.html', username=session['username'])
+        return render_template('chat.html')
     return render_template('login.html')
 
 @app.route('/login', methods=['POST'])
@@ -39,17 +39,64 @@ def login():
     data = request.json
     username = data.get('username1')
     password = data.get('password1')
-    # For demo: any username/password is valid if username not blank
-    firebase={
+    firebase = {
         "type": "login",
         "username": username,
         "password": password
-    }
-    json_str = json.dumps(firebase)
-    json_bytes = json_str.encode('utf-8')
-    send_with_header(client, json_bytes)
-    return jsonify({'success': False, 'error': 'Invalid username'}), 400
+    }  
 
+    json_bytes = json.dumps(firebase).encode('utf-8')
+    send_with_header(client, json_bytes)
+
+    try:
+        answer = login_result_queue.get(timeout=3)
+    except queue.Empty:
+        return jsonify({'success': False, 'error': 'Server did not respond'}), 500
+
+    if answer == "correct pass":
+        session['username'] = username
+        return jsonify({'success': True})
+    elif answer == "wrong pass":
+        return jsonify({'success': False, 'error': 'Wrong password'}), 401
+    elif answer == "user not found":
+        return jsonify({'success': False, 'error': 'Invalid username'}), 404
+    else:
+        return jsonify({'success': False, 'error': f'Unexpected: {answer}'}), 500
+
+login_result_queue = queue.Queue()
+
+def listen_to_server():
+    while True:
+        try:
+            header = client.recv(HEADER)
+            if not header or header.strip() == b"":
+                continue
+            try:
+                msg_len = int(header.decode(FORMAT).strip())
+            except ValueError:
+                # Ignore junk/probes
+                continue
+            if msg_len <= 0:
+                continue
+            data = recv_exact(client, msg_len)
+            if not data:
+                continue
+            try:
+                message = json.loads(data.decode(FORMAT))
+            except json.JSONDecodeError:
+                continue
+            if isinstance(message, dict) and message.get("type") == "login_ans":
+                ans = message.get("answer")
+                if ans is not None:
+                    login_result_queue.put(ans)
+        except Exception as e:
+            print(f"[CLIENT LISTENER ERROR] {e}")
+            break
+
+threading.Thread(target=listen_to_server, daemon=True).start()
+
+
+ 
 @app.route('/register', methods=['POST'])
 def register():
     data = request.json
@@ -66,7 +113,6 @@ def register():
     }
     json_str = json.dumps(firebase)
     json_bytes = json_str.encode('utf-8')
-
     send_with_header(client,json_bytes)
     return jsonify({'success': True})
 
@@ -101,14 +147,22 @@ def file_metadata():
     # Just echo the received metadata for demo
     return jsonify({'received': data})
 
-def send_with_header(sock,data):
 
-    if isinstance(data, str):
-        data = data.encode(FORMAT)
-    sock.send(str(len(data)).encode(FORMAT).ljust(HEADER))
-    time.sleep(0.01)
-    sock.send(data)
 
+def send_with_header(sock, data_bytes: bytes):
+    # Always bytes here
+    msg_len = str(len(data_bytes)).encode(FORMAT).ljust(HEADER)
+    sock.sendall(msg_len)
+    sock.sendall(data_bytes)
+
+def recv_exact(sock, num_bytes: int) -> bytes:
+    buf = b""
+    while len(buf) < num_bytes:
+        chunk = sock.recv(num_bytes - len(buf))
+        if not chunk:
+            raise ConnectionError("Disconnected while reading body")
+        buf += chunk
+    return buf
 
 pubkey, privkey = rsa.newkeys(512)
 with open("public.pem", "wb") as f:
@@ -125,9 +179,6 @@ with open("public.pem", "rb") as f:
 with open("private.pem", "rb") as f:
     my_priv = rsa.PrivateKey.load_pkcs1(f.read())
 
-
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDR)
 
 
 

@@ -1,62 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-  <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
 </head>
 <body>
-<div id="app">
-  <div class="chat-app" id="chat-app">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <input type="text" class="search-bar" placeholder="Search users…">
-      </div>
-      <div class="active-users-carousel" id="active-users-carousel"></div>
-      <nav class="sidebar-nav">
-        <button class="nav-btn active">Chats</button>
-        <button class="nav-btn">Settings</button>
-      </nav>
-      <div class="user-list" id="user-list"></div>
-    </aside>
-    <main class="main-chat-window">
-      <header class="chat-header" id="chat-header">
-        <img class="avatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="avatar">
-        <div>
-          <div class="username">{{ username }}</div>
-          <div class="status">online</div>
-        </div>
-        <form id="logout-form" style="margin-left:auto">
-          <button type="submit" class="btn" style="padding:4px 14px;font-size: 13px;">Logout</button>
-        </form>
-      </header>
-      <section class="messages" id="messages"></section>
-      <!-- DRAG & DROP FILE METADATA AREA -->
-      <div id="drop-area">Drag & drop file here (metadata only)</div>
-      <div id="result"></div>
-      <!-- Chat input box -->
-      <footer class="chat-input-box">
-        <button class="emoji-btn" title="Pick emoji">😊</button>
-        <input type="file" id="file-upload" class="file-upload" multiple>
-        <label for="file-upload" class="file-upload-label" title="Attach file">📎</label>
-        <input type="text" id="message-input" class="text-input" placeholder="Type a message…">
-        <button class="send-btn" id="send-btn" title="Send"><span>➤</span></button>
-      </footer>
-      <div class="dark-mode-toggle">
-        <label>
-          <input type="checkbox" id="toggle-dark-mode" checked>
-          🌙
-        </label>
-      </div>
-    </main>
-  </div>
-</div>
-<script>
-const username = "{{ username|tojson }}";
-</script>
-<script src="{{ url_for('static', filename='chat.js') }}"></script>
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Chats</h2>
+                <button id="toggleSidebar">☰</button>
+            </div>
+            <input type="text" id="searchUsers" placeholder="Search messages or users">
+            <ul id="userList"></ul>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <div class="chat-header">
+                <span id="chatWith">Select a chat</span>
+            </div>
+            <div class="chat-messages" id="messages"></div>
+
+            <!-- Drop Zone -->
+            <div id="dropZone" class="drop-zone">Drop files here</div>
+
+            <!-- Chat Input -->
+            <div class="chat-input">
+                <div class="emoji-picker" id="emojiPicker"></div>
+                <input type="text" id="messageInput" placeholder="Enter message...">
+                <input type="file" id="fileInput" hidden>
+                <button id="attachBtn">📎</button>
+                <button id="sendBtn">➤</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
 </body>
 </html>
