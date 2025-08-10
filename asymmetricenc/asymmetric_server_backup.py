@@ -78,55 +78,62 @@ def handle_client(conn, addr):
     try:
         while True:
             try:
-                header_raw = recv_exact(conn, HEADER)
-                msg_len = int(header_raw.decode(FORMAT).strip())
+                # Read the header
+                header_raw = conn.recv(HEADER)
+                if not header_raw or header_raw.strip() == b"":
+                    continue  # No header data, keep waiting
+
+                # Validate header as an integer
+                try:
+                    msg_len = int(header_raw.decode(FORMAT).strip())
+                except ValueError:
+                    print(f"[{addr}] Invalid header, skipping...")
+                    continue
+
+                # Ignore zero or negative lengths
+                if msg_len <= 0:
+                    print(f"[{addr}] Empty length, skipping...")
+                    continue
+
+                # Read the message body
                 data_bytes = recv_exact(conn, msg_len)
-    # Decode JSON
+                if not data_bytes or data_bytes.strip() == b"":
+                    print(f"[{addr}] Empty message body, skipping...")
+                    continue
+
+                # Now decode JSON safely
                 try:
                     data = json.loads(data_bytes.decode(FORMAT))
-                    if data.get('type') == 'registration':
-                        username = data.get('username')
-                        email = data.get('email')
-                        password = data.get('password')
-                        pub_key = data.get('pub_key')
-                        adder(username, email, password, pub_key)
-                        print(f"[+] {username} registered.")
-                        client_keys[username] = pub_key
-                        clients[username] = conn
+                except json.JSONDecodeError as e:
+                    print(f"[{addr}] Failed to parse JSON: {e}")
+                    continue
 
-            
-        
+                # --- Handle messages here ---
+                if data.get('type') == 'registration':
+                    username = data.get('username')
+                    email = data.get('email')
+                    password = data.get('password')
+                    pub_key = data.get('pub_key')
+                    adder(username, email, password, pub_key)
+                    print(f"[+] {username} registered.")
+                    client_keys[username] = pub_key
+                    clients[username] = conn
 
-     
-                    elif data.get('type') == 'login':
-                        username = data.get('username')
-                        password = data.get('password')
-                        check_password(cursor,usename,password)
-                    
-        
-                except Exception as e:
-                    print(f"[ERR] Failed to parse registration JSON: {e}")
-                    conn.close()
-                    return
+                elif data.get('type') == 'login':
+                    username = data.get('username')
+                    password = data.get('password')
+                    check_password(cursor, username, password)
 
-                    while True:
-            
-                        try:
-                            header_raw = recv_exact(conn, HEADER)
-                            msg_len = int(header_raw.decode(FORMAT).strip())
-                            msg = recv_exact(conn, msg_len)
-                            # ...handle your message here...
-                        except ConnectionError:
-                            print(f"[{addr}] Client disconnected")
-                            break
-                        except Exception as e:
-                            print(f"[{addr}] Unexpected error: {e}")
-                            break
+            except ConnectionError:
+                print(f"[{addr}] Client disconnected.")
+                break
             except Exception as e:
-                        print(f"[{addr}] Error during handling: {e}")
+                print(f"[{addr}] Error during handling: {e}")
     finally:
-                        conn.close()
-                        print(f"[{addr}] Connection closed")
+        conn.close()
+        print(f"[{addr}] Connection closed")
+
+                        
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 server.listen()
