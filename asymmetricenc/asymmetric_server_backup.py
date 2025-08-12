@@ -41,9 +41,11 @@ def adder(name, email, password, cypher_text):
             (name, email, password, cypher_text)
         )
         conns.commit()
+        print("Inserted successfully!")
         return "Inserted successfully!"
     except sqlite3.IntegrityError:
         return "Email already exists."
+        print("Email already exists.")
 
 def check_password(cursor, name, user_password):
     try:
@@ -54,11 +56,13 @@ def check_password(cursor, name, user_password):
         
         if stored_password == user_password:
             return "correct pass"
+            print("cpass")
         else:
             return "wrong pass"
+            print("wpass")
     except Exception as e:
         return f"invalid pass: {e}"
- 
+        print("ipass")
 def update_pss(name, new_passwd):
     try:
         cursor.execute(
@@ -94,12 +98,13 @@ def handle_client(conn, addr):
                 if msg_len <= 0:
                     #print(f"[{addr}] Empty length, skipping...")
                     continue
-
+                
                 # Read the message body
                 data_bytes = recv_exact(conn, msg_len)
                 if not data_bytes or data_bytes.strip() == b"":
                     print(f"[{addr}] Empty message body, skipping...")
                     continue
+                print(f"[{addr}] Raw data bytes: {data_bytes!r}")  # <--- Add this line
 
                 # Now decode JSON safely
                 try:
@@ -107,29 +112,37 @@ def handle_client(conn, addr):
                 except json.JSONDecodeError as e:
                     print(f"[{addr}] Failed to parse JSON: {e}")
                     continue
-
+                
                 # --- Handle messages here ---
                 if data.get('type') == 'registration':
-                    username = data.get('username')
-                    email = data.get('email')
-                    password = data.get('password')
-                    pub_key = data.get('pub_key')
-                    adder(username, email, password, pub_key)
-                    print(f"[+] {username} registered.")
-                    client_keys[username] = pub_key
-                    clients[username] = conn
+                    try:
+                        username = data.get('username')
+                        email = data.get('email')
+                        password = data.get('password')
+                        pub_key = data.get('pub_key')
+                        adder(username, email, password, pub_key)
+                        print(f"[+] {username} registered.")
+                        client_keys[username] = pub_key
+                        clients[username] = conn
+                        
+                    except:
+                        print("regnot")    
 
                 elif data.get('type') == 'login':
-                    username = data.get('username')
-                    password = data.get('password')
-                    passwd_result=check_password(cursor, username, password)
-                    firefox={
-                        "type":"login_ans",
-                        "answer":passwd_result
-                    }
-                    json_str = json.dumps(firefox)
-                    json_bytes = json_str.encode('utf-8')
-                    send_with_header(conn, json_bytes)
+                    try:
+                        username = data.get('username')
+                        password = data.get('password')
+                        passwd_result=check_password(cursor, username, password)
+                        firefox={
+                            "type":"login_ans",
+                            "answer":passwd_result
+                        }
+                        json_str = json.dumps(firefox)
+                        json_bytes = json_str.encode('utf-8')
+                        send_with_header(conn, json_bytes)
+                        print("logind")
+                    except:
+                        print("loginnd")    
             except ConnectionError:
                 print(f"[{addr}] Client disconnected.")
                 break

@@ -13,7 +13,7 @@ HEADER = 4
 PORT = 24179  # Playit assigned port
 FORMAT = "utf-8"
 
-LOCAL_MODE = False
+#LOCAL_MODE = False
 SERVER = "ready-lebanon.gl.at.ply.gg"  # Playit assigned address
 ADDR = (SERVER, PORT)
 # Connect to server
@@ -39,13 +39,13 @@ def login():
     data = request.json
     username = data.get('username1')
     password = data.get('password1')
-    firebase = {
+    fireball = {
         "type": "login",
         "username": username,
         "password": password
     }  
 
-    json_bytes = json.dumps(firebase).encode('utf-8')
+    json_bytes = json.dumps(fireball).encode('utf-8')
     send_with_header(client, json_bytes)
 
     try:
@@ -55,12 +55,16 @@ def login():
 
     if answer == "correct pass":
         session['username'] = username
+        print("lgdone")
         return jsonify({'success': True})
     elif answer == "wrong pass":
+        print("wgpass")
         return jsonify({'success': False, 'error': 'Wrong password'}), 401
     elif answer == "user not found":
+        print("wguser")
         return jsonify({'success': False, 'error': 'Invalid username'}), 404
     else:
+        print("somethinf is wrong ")
         return jsonify({'success': False, 'error': f'Unexpected: {answer}'}), 500
 
 login_result_queue = queue.Queue()
@@ -99,6 +103,7 @@ threading.Thread(target=listen_to_server, daemon=True).start()
  
 @app.route('/register', methods=['POST'])
 def register():
+    print("Flask /register received:", data)
     data = request.json
     username = data.get('username')
     email = data.get('email')
@@ -112,9 +117,11 @@ def register():
         "pub_key": my_pub.save_pkcs1("PEM").decode('utf-8')
     }
     json_str = json.dumps(firebase)
+    print("Sending to socket server:", json_str)
     json_bytes = json_str.encode('utf-8')
     send_with_header(client,json_bytes)
     return jsonify({'success': True})
+    print("singup")
 
     
 @app.route('/logout', methods=['POST'])
@@ -150,7 +157,6 @@ def file_metadata():
 
 
 def send_with_header(sock, data_bytes: bytes):
-    # Always bytes here
     msg_len = str(len(data_bytes)).encode(FORMAT).ljust(HEADER)
     sock.sendall(msg_len)
     sock.sendall(data_bytes)
