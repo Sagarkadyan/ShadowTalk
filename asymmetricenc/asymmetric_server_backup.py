@@ -2,7 +2,7 @@ import socket
 import threading
 import json
 import sqlite3
-
+import time
 import queue
 
 # Connect (creates the database file if it doesn't exist)
@@ -84,6 +84,7 @@ def handle_client(conn, addr):
             try:
                 # Read the header
                 header_raw = conn.recv(HEADER)
+                time.sleep(0.01)
                 if not header_raw or header_raw.strip() == b"":
                     continue  # No header data, keep waiting
 
@@ -114,6 +115,7 @@ def handle_client(conn, addr):
                     continue
                 
                 # --- Handle messages here ---
+                
                 if data.get('type') == 'registration':
                     try:
                         username = data.get('username')

@@ -101,29 +101,31 @@ threading.Thread(target=listen_to_server, daemon=True).start()
 
 
  
+
+
 @app.route('/register', methods=['POST'])
 def register():
-    print("Flask /register received:", data)
-    data = request.json
+    data = request.get_json()
+    print("Flask /register received:", data, flush=True)
+
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-    
-    firebase={
+     firebase = {
         "type": "registration",
         "username": username,
         "email": email,
         "password": password,
         "pub_key": my_pub.save_pkcs1("PEM").decode('utf-8')
     }
-    json_str = json.dumps(firebase)
-    print("Sending to socket server:", json_str)
-    json_bytes = json_str.encode('utf-8')
-    send_with_header(client,json_bytes)
-    return jsonify({'success': True})
-    print("singup")
 
     
+    json_bytes = json.dumps(firebase).encode("utf-8")
+    
+    print(f"Client is sending: {json_bytes!r}") 
+    send_with_header(client, json_bytes)
+
+    return jsonify({'success': True})
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('username', None)
@@ -177,16 +179,10 @@ with open("public.pem", "wb") as f:
 with open("private.pem", "wb") as f:
     f.write(privkey.save_pkcs1("PEM"))
 
-
-
-
 with open("public.pem", "rb") as f:
     my_pub = rsa.PublicKey.load_pkcs1(f.read())
 with open("private.pem", "rb") as f:
     my_priv = rsa.PrivateKey.load_pkcs1(f.read())
-
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
