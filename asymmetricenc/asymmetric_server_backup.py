@@ -78,44 +78,43 @@ def update_pss(name, new_passwd):
     except Exception as e:
         return f"error: {e}"
 
+
+
+# In asymmetric_server_backup.py
 def handle_client(conn, addr):
+    """
+    Handles a single client connection, processing messages and managing errors.
+    """
+    print(f"[NEW CONNECTION] {addr} connected.")
     try:
         while True:
+            # Step 1: Receive the message header
+            header_raw = conn.recv(HEADER)
+            time.sleep(0.01)
+            if not header_raw:
+                print(f"[{addr}] Client disconnected gracefully.")
+                break
+
             try:
-                # Read the header
-                header_raw = conn.recv(HEADER)
-                time.sleep(0.01)
-                if not header_raw or header_raw.strip() == b"":
-                    continue  # No header data, keep waiting
+                msg_len = int(header_raw.decode(FORMAT).strip())
+            except ValueError:
+                print(f"[{addr}] Received invalid header. Discarding.")
+                continue
 
-                # Validate header as an integer
-                try:
-                    msg_len = int(header_raw.decode(FORMAT).strip())
-                except ValueError:
-                    print(f"[{addr}] Invalid header, skipping...")
-                    continue
+            if msg_len <= 0:
+                continue
 
-                # Ignore zero or negative lengths
-                if msg_len <= 0:
-                    #print(f"[{addr}] Empty length, skipping...")
-                    continue
-                
-                # Read the message body
-                data_bytes = recv_exact(conn, msg_len)
-                if not data_bytes or data_bytes.strip() == b"":
-                    print(f"[{addr}] Empty message body, skipping...")
-                    continue
-                print(f"[{addr}] Raw data bytes: {data_bytes!r}")  # <--- Add this line
+            # Step 2: Receive the message body
+            data_bytes = recv_exact(conn, msg_len)
+            if not data_bytes:
+                break
 
-                # Now decode JSON safely
-                try:
-                    data = json.loads(data_bytes.decode(FORMAT))
-                except json.JSONDecodeError as e:
-                    print(f"[{addr}] Failed to parse JSON: {e}")
-                    continue
-                
-                # --- Handle messages here ---
-                
+            data_str = data_bytes.decode(FORMAT)
+
+            # Step 3: Process the JSON data
+            try:
+                data = json.loads(data_str)
+
                 if data.get('type') == 'registration':
                     try:
                         username = data.get('username')
@@ -123,38 +122,45 @@ def handle_client(conn, addr):
                         password = data.get('password')
                         pub_key = data.get('pub_key')
                         adder(username, email, password, pub_key)
-                        print(f"[+] {username} registered.")
+                        print(f"[+] {username} registered successfully.")
                         client_keys[username] = pub_key
                         clients[username] = conn
-                        
-                    except:
-                        print("regnot")    
+                    except Exception as e:
+                        print(f"[{addr}] Error during registration processing: {e}")
 
                 elif data.get('type') == 'login':
                     try:
                         username = data.get('username')
                         password = data.get('password')
-                        passwd_result=check_password(cursor, username, password)
-                        firefox={
-                            "type":"login_ans",
-                            "answer":passwd_result
-                        }
-                        json_str = json.dumps(firefox)
-                        json_bytes = json_str.encode('utf-8')
-                        send_with_header(conn, json_bytes)
-                        print("logind")
-                    except:
-                        print("loginnd")    
-            except ConnectionError:
-                print(f"[{addr}] Client disconnected.")
-                break
-            except Exception as e:
-                print(f"[{addr}] Error during handling: {e}")
-    finally:
-        conn.close()
-        print(f"[{addr}] Connection closed")
-
+                        passwd_result = check_password(cursor, username, password)
                         
+                        # --- FIX: The closing brace '}' was missing here ---
+                        response = {
+                            "type": "login_ans",
+                            "answer": passwd_result
+                        } # <--- This brace was missing
+
+                        json_str = json.dumps(response)
+                        send_with_header(conn, json_str)
+                        print(f"[{addr}] Login response sent for {username}")
+                    except Exception as e:
+                        print(f"[{addr}] Error during login processing: {e}")
+
+            except json.JSONDecodeError:
+                print(f"[{addr}] Received non-JSON data: '{data_str}'")
+                continue
+
+    except ConnectionResetError:
+        print(f"[{addr}] Connection was forcibly closed by the client.")
+    except Exception as e:
+        print(f"[{addr}] An unexpected error occurred: {e}")
+    finally:
+        print(f"[{addr}] Closing connection.")
+        # ... (cleanup logic is fine) ...
+        conn.close()
+
+
+                      
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 server.listen()
