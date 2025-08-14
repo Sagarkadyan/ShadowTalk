@@ -7,6 +7,7 @@ import time
 import rsa
 import queue
 import json 
+import logging
 
 
 HEADER = 4
@@ -106,12 +107,12 @@ threading.Thread(target=listen_to_server, daemon=True).start()
 @app.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    print("Flask /register received:", data, flush=True)
+    app.logger.info("Flask /register received:", data)
 
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
-     firebase = {
+    firebase = {
         "type": "registration",
         "username": username,
         "email": email,
@@ -120,12 +121,16 @@ def register():
     }
 
     
-    json_bytes = json.dumps(firebase).encode("utf-8")
-    
-    print(f"Client is sending: {json_bytes!r}") 
-    send_with_header(client, json_bytes)
+    #json_bytes = json.dumps(firebase).encode("utf-8")
+    #app.logger.info("Client is sending: %r", json_bytes)  # ✅ logger
+    print("Client is sending:", json_bytes, flush=True)   # ✅ print
 
+    send_with_header(client, firebase)
+    
     return jsonify({'success': True})
+
+
+
 @app.route('/logout', methods=['POST'])
 def logout():
     session.pop('username', None)
@@ -156,22 +161,53 @@ def file_metadata():
     # Just echo the received metadata for demo
     return jsonify({'received': data})
 
+def send_with_header(sock, payload_obj):
+    """
+    Always send JSON-formatted message with a fixed-size header.
+    payload_obj: Python dict/list/serializable object
+    """
+    try:
+        json_str = json.dumps(payload_obj)
+        data_bytes = json_str.encode(FORMAT)
+        msg_len = str(len(data_bytes)).encode(FORMAT).ljust(HEADER)
+        sock.sendall(msg_len)
+        sock.sendall(data_bytes)
+    except (TypeError, ValueError) as e:
+        print(f"[SEND ERROR] Failed to encode JSON: {e}")
 
 
-def send_with_header(sock, data_bytes: bytes):
-    msg_len = str(len(data_bytes)).encode(FORMAT).ljust(HEADER)
-    sock.sendall(msg_len)
-    sock.sendall(data_bytes)
+def recv_exact(conn, msg_len):
+    """
+    Receives exactly msg_len bytes from the socket.
+    """
+    chunks = []
+    bytes_recd = 0
+    while bytes_recd < msg_len:
+        chunk = conn.recv(min(msg_len - bytes_recd, 2048))
+        if chunk == b'':
+            raise RuntimeError("Socket connection broken")
+        chunks.append(chunk)
+        bytes_recd = bytes_recd + len(chunk)
+    return b''.join(chunks)
 
-def recv_exact(sock, num_bytes: int) -> bytes:
-    buf = b""
-    while len(buf) < num_bytes:
-        chunk = sock.recv(num_bytes - len(buf))
-        if not chunk:
-            raise ConnectionError("Disconnected while reading body")
-        buf += chunk
-    return buf
+# ... (The rest of your code) ...
 
+# Inside the handle_client function where you receive the data
+try:
+    header_bytes = conn.recv(8)  # Assuming the header is 8 bytes
+    if not header_bytes:
+        # Client disconnected
+        return
+    msg_len = int.from_bytes(header_bytes, 'big')
+    
+    data_bytes = recv_exact(conn, msg_len)
+    data_str = data_bytes.decode('utf-8')
+    data = json.loads(data_str)
+    # ... (process the data) ...
+
+except (json.JSONDecodeError, RuntimeError) as e:
+    # Handle the specific errors here
+    print(f"Error during data reception/decoding: {e}")
 pubkey, privkey = rsa.newkeys(512)
 with open("public.pem", "wb") as f:
     f.write(pubkey.save_pkcs1("PEM"))

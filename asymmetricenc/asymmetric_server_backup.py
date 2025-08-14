@@ -26,14 +26,40 @@ def send_with_header(conn, data):
     conn.send(msg_len)
     conn.send(data)
 
-def recv_exact(conn, num_bytes):
-    data = b""
-    while len(data) < num_bytes:
-        packet = conn.recv(num_bytes - len(data))
-        if not packet:
-            raise ConnectionError("Disconnected")
-        data += packet
-    return data
+def recv_exact(conn, msg_len):
+    """
+    Receives exactly msg_len bytes from the socket.
+    """
+    chunks = []
+    bytes_recd = 0
+    while bytes_recd < msg_len:
+        chunk = conn.recv(min(msg_len - bytes_recd, 2048))
+        if chunk == b'':
+            raise RuntimeError("Socket connection broken")
+        chunks.append(chunk)
+        bytes_recd = bytes_recd + len(chunk)
+    return b''.join(chunks)
+
+# ... (The rest of your code) ...
+
+# Inside the handle_client function where you receive the data
+try:
+    header_bytes = conn.recv(8)  # Assuming the header is 8 bytes
+    if not header_bytes:
+        # Client disconnected
+        return
+    msg_len = int.from_bytes(header_bytes, 'big')
+    
+    data_bytes = recv_exact(conn, msg_len)
+    data_str = data_bytes.decode('utf-8')
+    data = json.loads(data_str)
+    # ... (process the data) ...
+
+except (json.JSONDecodeError, RuntimeError) as e:
+    # Handle the specific errors here
+    print(f"Error during data reception/decoding: {e}")
+
+
 def adder(name, email, password, cypher_text):
     try:
         cursor.execute(
@@ -46,7 +72,7 @@ def adder(name, email, password, cypher_text):
     except sqlite3.IntegrityError:
         return "Email already exists."
         print("Email already exists.")
- def check_password(cursor, name, user_password):
+def check_password(cursor, name, user_password):
     try:
         cursor.execute(
             "SELECT password FROM users WHERE name = ?", (name,)
@@ -128,8 +154,7 @@ def handle_client(conn, addr):
                         pub_key = data.get('pub_key')
                         adder(username, email, password, pub_key)
                         print(f"[+] {username} registered successfully.")
-                        client_keys[username] = pub_key
-                        clients[username] = conn
+                        
                     except Exception as e:
                         print(f"[{addr}] Error during registration processing: {e}")
 
@@ -139,7 +164,6 @@ def handle_client(conn, addr):
                         password = data.get('password')
                         passwd_result = check_password(cursor, username, password)
                         
-                        # --- FIX: The closing brace '}' was missing here ---
                         response = {
                             "type": "login_ans",
                             "answer": passwd_result
