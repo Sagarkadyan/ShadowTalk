@@ -46,23 +46,30 @@ def adder(name, email, password, cypher_text):
     except sqlite3.IntegrityError:
         return "Email already exists."
         print("Email already exists.")
-
-def check_password(cursor, name, user_password):
+ def check_password(cursor, name, user_password):
     try:
         cursor.execute(
             "SELECT password FROM users WHERE name = ?", (name,)
         )
         row = cursor.fetchone()
-        
-        if stored_password == user_password:
-            return "correct pass"
-            print("cpass")
+
+        if row:
+            stored_password = row[0]  
+            if stored_password == user_password:
+                print("cpass")
+                return "correct pass"
+            else:
+                print("wpass")
+                return "wrong pass"
         else:
-            return "wrong pass"
-            print("wpass")
+            # No user found
+            return "user not found"
+
     except Exception as e:
+        print("ipass", e)
         return f"invalid pass: {e}"
-        print("ipass")
+
+
 def update_pss(name, new_passwd):
     try:
         cursor.execute(
@@ -82,9 +89,7 @@ def update_pss(name, new_passwd):
 
 # In asymmetric_server_backup.py
 def handle_client(conn, addr):
-    """
-    Handles a single client connection, processing messages and managing errors.
-    """
+    
     print(f"[NEW CONNECTION] {addr} connected.")
     try:
         while True:
