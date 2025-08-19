@@ -12,14 +12,23 @@ async def handler(websocket):
     try:
         async for message in websocket:
             print(f"Server received raw message: {message}")
-
+            response_message = None
             try:
                 data = json.loads(message)
                 print(f"Server successfully parsed JSON: {data}")
 
                 if data.get("type") == "login":
-                    username = data.get("username", "guest")
-                    response_message = {"status": "success", "message": f"Welcome, {username}!"}
+                    try:
+                        username = data.get("username")
+                        password = data.get("password")
+                        passwd_result = check_password(cursor, username, password)
+                        response_message = {
+                            "type": "login_ans",
+                            "answer": passwd_result,
+                            "username": username
+                        }
+                    except Exception as e:
+                        response_message = {"type": "login_ans", "answer": "error", "error": str(e)}
 
                 elif data.get("type") == "registration":
                     print("Registration request received.")
@@ -30,24 +39,24 @@ async def handler(websocket):
                         pub_key = data.get('pub_key')
                         adder(username, email, password, pub_key)
                         print(f"[+] {username} registered successfully.")
-                        response_message = {"status": "success", "message": "User registered."}
+                        response_message = {"status": "success", "message": "user added"}
                     except Exception as e:
-                        print(f"[{addr}] Error during registration processing: {e}")
-                        response_message = {"status":"failed","message": "user not registered"}
-                    
+                        print(f" Error during registration processing: {e}")
+                        response_message = {"status": "failed", "message": "user not registered"}
 
                 else:
                     response_message = {"status": "ignored", "message": "Message type not recognized."}
 
+            except json.JSONDecodeError:
+                response_message = {"status": "error", "message": "Invalid JSON format."}
+
+            if response_message is not None:
                 await websocket.send(json.dumps(response_message))
                 print(f"Server sent response: {json.dumps(response_message)}")
 
-            except json.JSONDecodeError:
-                error_response = {"status": "error", "message": "Invalid JSON format."}
-                await websocket.send(json.dumps(error_response))
-
     except websockets.exceptions.ConnectionClosedError:
         print("Client connection closed unexpectedly.")
+
     finally:
         print("Client disconnected.")
 
@@ -106,6 +115,9 @@ def update_pss(name, new_passwd):
 async def main():
     async with websockets.serve(handler, "localhost", 9999):
         await asyncio.Future()  # Run forever
-conns.close()
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    finally:    
+        conns.close()
