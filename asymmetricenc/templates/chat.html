@@ -1,44 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Chat</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='chat.css') }}">
+    <title>Chat Application</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="chat-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
             <div class="sidebar-header">
                 <h2>Chats</h2>
-                <button id="toggleSidebar">☰</button>
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-sun sun-icon"></i>
+                    <i class="fas fa-moon moon-icon"></i>
+                </button>
             </div>
-            <input type="text" id="searchUsers" placeholder="Search messages or users">
-            <ul id="userList"></ul>
-        </aside>
-
+            
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Search messages or users..." id="searchInput" autocomplete="off">
+            </div>
+            
+            <!-- Quick Contacts -->
+            <div class="quick-contacts">
+                <div class="quick-contacts-list" id="quickContactsList">
+                    <!-- Quick contacts will be populated by backend -->
+                </div>
+            </div>
+            
+            <!-- Recent Chats -->
+            <div class="recent-chats">
+                <div class="chat-list" id="chatList">
+                    <!-- Chat list will be populated by backend -->
+                </div>
+                <div class="empty-state" id="emptyChatsState">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">💬</div>
+                        <h3>No conversations yet</h3>
+                        <p>Your chats will appear here once you start messaging</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Main Chat Area -->
-        <main class="chat-main">
+        <div class="main-chat">
+            <!-- Chat Header -->
             <div class="chat-header">
-                <span id="chatWith">Select a chat</span>
+                <div class="contact-info" id="contactInfo">
+                    <div class="contact-avatar">
+                        <img src="" alt="" id="currentContactAvatar" style="display: none;">
+                        <div class="online-indicator" id="onlineIndicator" style="display: none;"></div>
+                    </div>
+                    <div class="contact-details">
+                        <h3 id="currentContactName">Select a chat</h3>
+                        <span class="online-status" id="onlineStatus">to start messaging</span>
+                    </div>
+                </div>
             </div>
-            <div class="chat-messages" id="messages"></div>
-
-            <!-- Drop Zone -->
-            <div id="dropZone" class="drop-zone">Drop files here</div>
-
-            <!-- Chat Input -->
-            <div class="chat-input">
-                <div class="emoji-picker" id="emojiPicker"></div>
-                <input type="text" id="messageInput" placeholder="Enter message...">
-                <input type="file" id="fileInput" hidden>
-                <button id="attachBtn">📎</button>
-                <button id="sendBtn">➤</button>
+            
+            <!-- Messages Area -->
+            <div class="messages-container" id="messagesContainer">
+                <div class="messages-list" id="messagesList">
+                    <!-- Messages will be populated by backend -->
+                </div>
+                <div class="empty-state" id="emptyChatState">
+                    <div class="empty-state-content">
+                        <div class="empty-state-icon">✨</div>
+                        <h3>Select a chat to start messaging</h3>
+                        <p>Choose a conversation from the sidebar to view messages</p>
+                    </div>
+                </div>
             </div>
-        </main>
+            
+            <!-- Message Input -->
+            <div class="message-input-container">
+                <div class="message-input">
+                    <button class="attachment-button" id="attachmentButton" title="Send file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt" style="display: none;">
+                    
+                    <input type="text" placeholder="Type a message..." id="messageInput" autocomplete="off">
+                    
+                    <button class="emoji-button" id="emojiButton" title="Add emoji">
+                        <i class="fas fa-smile"></i>
+                    </button>
+                    
+                    <button class="send-button" id="sendButton" title="Send message">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                
+                <!-- File Preview -->
+                <div class="file-preview" id="filePreview" style="display: none;">
+                    <div class="file-preview-content">
+                        <div class="file-info">
+                            <i class="file-icon"></i>
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                        </div>
+                        <button class="file-remove" id="fileRemove">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+    
+    <!-- Emoji Picker -->
+    <div class="emoji-picker" id="emojiPicker" style="display: none;">
+        <div class="emoji-picker-header">
+            <div class="emoji-categories">
+                <button class="emoji-category active" data-category="smileys" title="Smileys & People">😀</button>
+                <button class="emoji-category" data-category="animals" title="Animals & Nature">🐱</button>
+                <button class="emoji-category" data-category="food" title="Food & Drink">🍎</button>
+                <button class="emoji-category" data-category="activities" title="Activities">⚽</button>
+                <button class="emoji-category" data-category="travel" title="Travel & Places">🚗</button>
+                <button class="emoji-category" data-category="objects" title="Objects">💡</button>
+                <button class="emoji-category" data-category="symbols" title="Symbols">❤️</button>
+            </div>
+        </div>
+        <div class="emoji-picker-content" id="emojiPickerContent">
+            <!-- Emojis will be populated by JavaScript -->
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
 </body>
 </html>

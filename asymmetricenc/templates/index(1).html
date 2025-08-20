@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Chat Application</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="app-title">
+                    <h2>Chat</h2>
+                </div>
+                <button class="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search conversations..." id="searchInput">
+                </div>
+            </div>
+
+            <div class="conversations" id="conversationsList">
+                <!-- Conversations will be loaded from your backend -->
+                <div class="empty-conversations" id="emptyConversations">
+                    <div class="empty-content">
+                        <i class="fas fa-comments"></i>
+                        <p>No conversations yet</p>
+                        <small>Connect your backend to load conversations</small>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-main">
+            <div class="chat-header">
+                <div class="current-user">
+                    <div class="avatar">
+                        <img src="https://ui-avatars.com/api/?name=Alice+Johnson&background=f093fb&color=fff&size=50" alt="Alice Johnson">
+                        <div class="status-indicator online"></div>
+                    </div>
+                    <div class="user-details">
+                        <h3>Alice Johnson</h3>
+                        <span class="status">Online • Last seen 2 minutes ago</span>
+                    </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" aria-label="More options">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <!-- Messages will be loaded from your backend or displayed when you start chatting -->
+                <div class="empty-chat-placeholder" id="emptyChatPlaceholder">
+                    <div class="placeholder-content">
+                        <h3>💬 Ready to Chat</h3>
+                        <p>Configure your backend in <code>script.js</code> to load conversations and start messaging.</p>
+                        <p>You can also test the interface by typing a message below.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="message-input-container">
+                <div class="input-actions">
+                    <button class="input-btn emoji-btn" aria-label="Add emoji">
+                        <i class="far fa-smile"></i>
+                    </button>
+                    <button class="input-btn attachment-btn" aria-label="Attach file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                </div>
+                <div class="message-input">
+                    <input type="text" placeholder="Type a message..." id="messageInput" autocomplete="off">
+                </div>
+                <button class="send-btn" id="sendBtn" aria-label="Send message">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile sidebar overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Emoji Picker Modal -->
+    <div class="emoji-picker-modal" id="emojiPickerModal">
+        <div class="emoji-picker-content">
+            <div class="emoji-picker-header">
+                <h3>Select Emoji</h3>
+                <button class="close-emoji-picker" id="closeEmojiPicker">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="emoji-categories">
+                <button class="emoji-category active" data-category="smileys">😀</button>
+                <button class="emoji-category" data-category="people">👍</button>
+                <button class="emoji-category" data-category="animals">🐶</button>
+                <button class="emoji-category" data-category="food">🍎</button>
+                <button class="emoji-category" data-category="activities">⚽</button>
+                <button class="emoji-category" data-category="travel">🚗</button>
+                <button class="emoji-category" data-category="objects">💡</button>
+                <button class="emoji-category" data-category="symbols">❤️</button>
+            </div>
+            <div class="emoji-grid" id="emojiGrid">
+                <!-- Emojis will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Modal -->
+    <div class="file-upload-modal" id="fileUploadModal">
+        <div class="file-upload-content">
+            <div class="file-upload-header">
+                <h3>Upload File</h3>
+                <button class="close-file-upload" id="closeFileUpload">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="file-upload-area" id="fileUploadArea">
+                <div class="file-upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <p>Drag and drop files here or click to browse</p>
+                <input type="file" id="fileInput" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt">
+                <button class="browse-button" id="browseButton">Browse Files</button>
+            </div>
+            <div class="file-preview" id="filePreview">
+                <!-- File previews will appear here -->
+            </div>
+            <div class="file-upload-actions">
+                <button class="cancel-upload" id="cancelUpload">Cancel</button>
+                <button class="send-files" id="sendFiles" disabled>Send Files</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import asyncio
 import websockets
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect
 from flask_cors import CORS
 import rsa
 import json
@@ -24,11 +24,15 @@ class PersistentWebSocketClient:
         self.websocket = await websockets.connect(self.uri)
         print("Connected to WebSocket server.")
         asyncio.create_task(self.listen())
+        asyncio.create_task(self.keepalive())
 
     async def listen(self):
         try:
             async for message in self.websocket:
                 print(f"Received from server: {message}")
+                data = json.loads(message)
+                if data.get("type") == "pong":
+                    continue
                 await self.response_queue.put(message)
         except websockets.exceptions.ConnectionClosed:
             print("WebSocket connection closed.")
@@ -42,6 +46,20 @@ class PersistentWebSocketClient:
         await self.send(message)
         response = await self.response_queue.get()
         return response
+    async def keepalive(self, interval=30):
+        """Send a ping every <interval> seconds to keep the connection alive."""
+        try:
+            while True:
+                if self.websocket:
+                    try:
+                        await self.websocket.send(json.dumps({"type": "ping"}))
+                        print("Ping sent to server")
+                    except Exception as e:
+                        print("Ping failed:", e)
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            print("Keepalive task cancelled")
+    
 
 persistent_ws_client = PersistentWebSocketClient(uri)
 
@@ -87,6 +105,13 @@ def login():
         return jsonify({'success': False, 'error': 'Invalid username'}), 404
     else:
         return jsonify({'success': False, 'error': f'Unexpected: {answer}'}), 500
+
+@app.route('/chat', methods=['GET'])
+def chat():
+    if 'username' not in session:   # protect the route
+        return redirect('/')
+    return render_template('chat.html', username=session['username'])
+
 
 @app.route('/')
 def home():

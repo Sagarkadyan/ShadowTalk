@@ -43,6 +43,8 @@ async def handler(websocket):
                     except Exception as e:
                         print(f" Error during registration processing: {e}")
                         response_message = {"status": "failed", "message": "user not registered"}
+                elif data.get("type") == "ping":
+                    response_message = {"type": "pong"}
 
                 else:
                     response_message = {"status": "ignored", "message": "Message type not recognized."}

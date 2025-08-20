@@ -11,38 +11,28 @@ loginBtn.addEventListener('click', () => {
 });
 
 // Handle login form submit
-const loginForm = document.querySelector('#login-form'); // make sure your form has id="login-form"
 
-loginForm.addEventListener('submit', async (e) => {
+document.getElementById('login-form').addEventListener('submit', async function(e){
     e.preventDefault();
 
-    const username = document.querySelector('#username1').value;
-    const password = document.querySelector('#password1').value;
+    const data = Object.fromEntries(new FormData(this).entries());
 
     try {
-        const res = await fetch('/login', {
+        const resp = await fetch('/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                form_type: 'login',
-                username1: username,
-                password1: password
-            })
+            body: JSON.stringify(data)
         });
 
-        if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.redirect) {
-                window.location.href = data.redirect; // navigate to chat.html
-            } else {
-                alert(data.error || 'Login failed');
-            }
+        const result = await resp.json();
+
+        if (result.success && result.redirect) {
+            window.location.href = result.redirect;   // ✅ Go to /chat
         } else {
-            const err = await res.json();
-            alert(err.error || 'Login error');
+            alert(result.error || "Login failed.");
         }
     } catch (err) {
         console.error(err);
-        alert('Network error, please try again.');
+        alert("Network error. Try again.");
     }
 });
