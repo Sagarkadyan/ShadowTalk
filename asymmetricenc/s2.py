@@ -6,7 +6,8 @@ import sqlite3
 # Connect (creates the database file if it doesn't exist)
 conns = sqlite3.connect('users.db' ,check_same_thread=False)
 cursor = conns.cursor()
-
+connected_users = {}  # {websocket: username}
+online_users = set()
 async def handler(websocket):
     print(f"A client connected from {websocket.remote_address}")
     try:
@@ -22,6 +23,11 @@ async def handler(websocket):
                         username = data.get("username")
                         password = data.get("password")
                         passwd_result = check_password(cursor, username, password)
+                        if passwd_result == "correct pass":
+                            connected_users[websocket] = username
+                            online_users.add(username)
+                            print(f"User {username} is now online. Total online: {len(online_users)}")
+                        
                         response_message = {
                             "type": "login_ans",
                             "answer": passwd_result,
@@ -43,6 +49,13 @@ async def handler(websocket):
                     except Exception as e:
                         print(f" Error during registration processing: {e}")
                         response_message = {"status": "failed", "message": "user not registered"}
+                elif data.get("type") == "get_online_users":
+                    
+                    response_message = {
+                        "type": "online_users_list",
+                        "users": list(online_users),
+                        "count": len(online_users)
+                    }
                 elif data.get("type") == "ping":
                     response_message = {"type": "pong"}
 
@@ -60,7 +73,15 @@ async def handler(websocket):
         print("Client connection closed unexpectedly.")
 
     finally:
+    
+    
+        if websocket in connected_users:
+            username = connected_users[websocket]
+            online_users.discard(username)
+            del connected_users[websocket]
+            print(f"User {username} went offline. Total online: {len(online_users)}")
         print("Client disconnected.")
+
 
 def adder(name, email, password, cypher_text):
     try:

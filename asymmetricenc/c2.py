@@ -14,9 +14,9 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Fix CORS - remove duplicate and add support_credentials
-CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:5500'], 
-     supports_credentials=True)  # This is crucial for sessions
-      
+# Fix CORS - remove duplicate and add support_credentials
+CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:5500'],
+     supports_credentials=True,  # This is crucial for sessions
      allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
@@ -125,6 +125,26 @@ def chat():
 
 
 
+@app.route('/api/online-users', methods=['GET'])
+def get_online_users_api():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    try:
+        request_data = {"type": "get_online_users"}
+        response_raw = run_async(persistent_ws_client.send_and_wait_response(json.dumps(request_data)))
+        response = json.loads(response_raw)
+        
+        if response.get("type") == "online_users_list":
+            return jsonify({
+                'users': response.get('users', []),
+                'count': response.get('count', 0)
+            })
+        else:
+            return jsonify({'users': [], 'count': 0})
+    except Exception as e:
+        print(f"Error getting online users: {e}")
+        return jsonify({'error': 'Failed to get online users'}), 500
 
 
 @app.route('/api/conversations', methods=['GET'])
@@ -132,8 +152,6 @@ def get_conversations():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
     
-    # Return user's conversations
-    # This should query your database/websocket for conversations
     return jsonify([])
 
 @app.route('/api/messages', methods=['GET'])
