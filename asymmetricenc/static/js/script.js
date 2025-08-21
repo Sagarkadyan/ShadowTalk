@@ -9,7 +9,7 @@ class ChatApp {
         
         // Backend configuration - Set your backend URL and endpoints here
         this.backendConfig = {
-            baseUrl: '', // Set your backend URL here (e.g., 'https://api.yourapp.com')
+            baseUrl: 'http://localhost:5000', // Your Flask server URL
             endpoints: {
                 conversations: '/api/conversations',
                 messages: '/api/messages',
@@ -19,10 +19,10 @@ class ChatApp {
             },
             headers: {
                 'Content-Type': 'application/json'
-                // Add authentication headers here (e.g., 'Authorization': 'Bearer ' + token)
+                // Add session/auth headers if needed
             }
         };
-
+        
         this.selectedFiles = [];
         this.emojis = {
             smileys: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '🙂', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😛', '😜', '😝'],
@@ -147,7 +147,7 @@ class ChatApp {
         }
         
         // Remove unread count
-        const unreadCount = selectedConv?.querySelector('.unread-count');
+        const unreadCount = selectedConv.querySelector('.unread-count');
         if (unreadCount) {
             unreadCount.remove();
         }
@@ -161,7 +161,14 @@ class ChatApp {
         } else {
             this.displayMessages();
         }
-        
+        // In your frontend API calls
+        fetch(url, {
+            method: 'POST',
+            headers: this.backendConfig.headers,
+            credentials: 'include',  // Include cookies/session
+            body: JSON.stringify(data)
+        })
+
         // Close mobile sidebar if open
         this.closeMobileSidebar();
     }

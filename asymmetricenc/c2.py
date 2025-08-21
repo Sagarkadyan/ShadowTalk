@@ -7,9 +7,18 @@ import json
 import os
 import threading
 
+# Remove the duplicate CORS line and fix it
+from flask_cors import CORS
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-CORS(app)
+
+# Fix CORS - remove duplicate and add support_credentials
+CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:5500'], 
+     supports_credentials=True)  # This is crucial for sessions
+      
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 
 uri = "ws://localhost:9999"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
@@ -110,8 +119,59 @@ def login():
 def chat():
     if 'username' not in session:   # protect the route
         return redirect('/')
-    return render_template('chat.html', username=session['username'])
+    return render_template('fchat.html', username=session['username'])
 
+
+
+
+
+
+
+@app.route('/api/conversations', methods=['GET'])
+def get_conversations():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Return user's conversations
+    # This should query your database/websocket for conversations
+    return jsonify([])
+
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    conversation_id = request.args.get('conversation_id')
+    # Return messages for the conversation
+    return jsonify([])
+
+@app.route('/api/messages/send', methods=['POST'])
+def send_message():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    data = request.get_json()
+    message = data.get('message')
+    conversation_id = data.get('conversation_id')
+    
+    # Process and send message via WebSocket
+    # Return the sent message data
+    return jsonify({'success': True})
+
+@app.route('/api/files/upload', methods=['POST'])
+def upload_file():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Handle file upload
+    return jsonify({'success': True, 'file_url': 'path/to/file'})
+
+@app.route('/api/user', methods=['GET'])
+def get_user():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    return jsonify({'username': session['username']})
 
 @app.route('/')
 def home():
