@@ -1,29 +1,3 @@
-
-        this.backendConfig = {
-            baseUrl: 'http://localhost:5000', // Your Flask server URL
-            endpoints: {
-                conversations: '/api/conversations',
-                messages: '/api/messages',
-                sendMessage: '/api/messages/send',
-                uploadFile: '/api/files/upload',
-                user: '/api/user'
-            },
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-        this.selectedFiles = [];
-        this.emojis = {
-            smileys: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '🙂', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😛', '😜', '😝'],
-            people: ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅'],
-            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐻‍❄️', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞'],
-            food: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🫐', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶️', '🫑', '🌽', '🥕', '🫒', '🧄', '🧅', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀', '🥚', '🍳', '🧈', '🥞'],
-            activities: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🪃', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛷', '⛸️', '🥌', '🎿', '⛷️', '🏂', '🪂', '🏋️', '🤸', '🤺', '🤾', '🏌️', '🏇'],
-            travel: ['🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🛻', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '🛼', '🚁', '🛸', '✈️', '🛩️', '🛫', '🛬', '🪂', '💺', '🚀', '🛰️', '🚢', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚂', '🚃', '🚄', '🚅', '🚆'],
-            objects: ['💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪚', '🔩', '⚙️', '🪤', '🧱', '⛓️', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦'],
-            symbols: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑']
-        };
-
 document.addEventListener("DOMContentLoaded", () => {
             // DOM elements
             const loginForm = document.getElementById("loginForm");
@@ -34,24 +8,29 @@ document.addEventListener("DOMContentLoaded", () => {
             const conversationsList = document.getElementById("conversationsList");
             const fileInput = document.getElementById("fileInput");
             const sendFilesBtn = document.getElementById("sendFiles");
-        
+            const attachmentBtn = document.querySelector(".attachment-btn");
+            const fileUploadModal = document.getElementById("fileUploadModal");
+            const closeFileUpload = document.getElementById("closeFileUpload");
+
             let currentConversation = "default"; // fallback conversation id
 
             this.backendConfig = {
-                baseUrl: 'http://localhost:5000', // Your Flask server URL
+                baseUrl: 'http://localhost:5000/chat', // Your Flask server URL
                 endpoints: {
-                    conversations: '/api/conversations',
-                    messages: '/api/messages',
-                    sendMessage: '/api/messages/send',
-                    uploadFile: '/api/files/upload',
-                    user: '/api/user'
+                    conversations: '/conversations',
+                    messages: '/messages',
+                    sendMessage: '/messages/send',
+                    uploadFile: '/files/upload',
+                    user: '/user',
+                    onlineuser: '/onlineusers'
+                    
                 },
                 headers: {
                     'Content-Type': 'application/json'
                 }
             };
             this.selectedFiles = [];
-            this.emojis = {
+            const emojis = {
                 smileys: ['😀', '😁', '😂', '🤣', '😃', '😄', '😅', '😆', '😉', '😊', '😋', '😎', '😍', '😘', '🥰', '😗', '😙', '😚', '🙂', '🤗', '🤩', '🤔', '🤨', '😐', '😑', '😶', '🙄', '😏', '😣', '😥', '😮', '🤐', '😯', '😪', '😫', '🥱', '😴', '😌', '😛', '😜', '😝'],
                 people: ['👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👋', '🤚', '🖐️', '✋', '🖖', '👏', '🙌', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃', '🧠', '🫀', '🫁', '🦷', '🦴', '👀', '👁️', '👅'],
                 animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐻‍❄️', '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵', '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤', '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🪱', '🐛', '🦋', '🐌', '🐞'],
@@ -61,7 +40,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 objects: ['💡', '🔦', '🕯️', '🪔', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '🪙', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪚', '🔩', '⚙️', '🪤', '🧱', '⛓️', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦'],
                 symbols: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉️', '☸️', '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑']
             };
-    
+            const emojiBtn = document.querySelector(".emoji-btn");
+            const emojiModal = document.getElementById("emojiPickerModal");
+            const emojiGrid = document.getElementById("emojiGrid");
+            const closeEmojiPicker = document.getElementById("closeEmojiPicker");
+
+            if (emojiBtn && emojiModal && emojiGrid) {
+            // Show picker
+            emojiBtn.addEventListener("click", () => {
+                emojiModal.style.display = "block";
+                emojiGrid.innerHTML = "";
+                Object.values(emojis).forEach(category => {
+                category.forEach(symbol => {
+                    const span = document.createElement("span");
+                    span.textContent = symbol;
+                    span.style.cursor = "pointer";
+                    span.addEventListener("click", () => {
+                    messageInput.value += symbol;
+                    emojiModal.style.display = "none";
+                    });
+                    emojiGrid.appendChild(span);
+                });
+                });
+            });
+            // Close picker
+            if (closeEmojiPicker) {
+                closeEmojiPicker.addEventListener("click", () => {
+                emojiModal.style.display = "none";
+                });
+            }
+            }
+
+            const themeToggle = document.querySelector('.theme-toggle');
+
+            themeToggle.addEventListener('click', () => {
+                document.body.dataset.theme =
+                  document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            });
+            
+
             // ================= AUTH ==================
             async function login(username, password) {
                 try {
@@ -163,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (e.key === "Enter") sendMessage();
                 });
             }
-        
+       
             // ================= CONVERSATIONS ==================
             async function loadConversations() {
                 try {
@@ -191,14 +208,40 @@ document.addEventListener("DOMContentLoaded", () => {
             // ================= ONLINE USERS ==================
             async function getOnlineUsers() {
                 try {
-                    const res = await fetch("/api/online-users");
+                    // Construct the full URL using the configured base and endpoint
+                    const url = `${this.backendConfig.baseUrl}${this.backendConfig.endpoints.onlineuser}`;
+                    const res = await fetch(url);
                     const data = await res.json();
+            
+                    // Get the sidebar element for online users
+                    const sidebar = document.getElementById("online-users");
+                    
+                    // Clear previous user list to avoid duplication
+                    sidebar.innerHTML = "";
+            
+                    // Check if there are users to display
+                    if (data.users && data.users.length > 0) {
+                        data.users.forEach(user => {
+                            const div = document.createElement("div");
+                            div.className = "user-item";
+                            div.textContent = user;
+                            sidebar.appendChild(div);
+                        });
+                    } else {
+                        // Display a message if no users are online
+                        const noUsersDiv = document.createElement("div");
+                        noUsersDiv.textContent = "No users online.";
+                        noUsersDiv.className = "no-users-message";
+                        sidebar.appendChild(noUsersDiv);
+                    }
+            
                     console.log("Online users:", data.users);
                 } catch (err) {
                     console.error("Error getting users:", err);
                 }
             }
-        
+            }
+            
             // ================= FILE UPLOAD ==================
             async function uploadFiles(files) {
                 const formData = new FormData();
@@ -224,7 +267,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
             }
-        
+            if (attachmentBtn && fileUploadModal) {
+                attachmentBtn.addEventListener("click", () => {
+                  fileUploadModal.style.display = "block";
+                });
+              }
+              
+              if (closeFileUpload) {
+                closeFileUpload.addEventListener("click", () => {
+                  fileUploadModal.style.display = "none";
+                });
+              }
+              
+              
             // ================= AUTO REFRESH ==================
             if (messagesContainer && conversationsList) {
                 loadConversations();

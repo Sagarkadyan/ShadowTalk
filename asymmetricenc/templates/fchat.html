@@ -8,7 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body data-theme="light">
+
     <div class="chat-container">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -37,6 +38,12 @@
                         <small>Connect your backend to load conversations</small>
                     </div>
                 </div>
+            </div>
+
+            <!-- Online Users Section -->
+            <div class="online-users" id="online-users">
+                
+                <!-- Online users will be loaded here -->
             </div>
         </aside>
 
@@ -89,18 +96,6 @@
             </div>
         </main>
     </div>
-            <!-- Add these to your fchat.html -->
-        <div id="messagesContainer" class="messages-container">
-            <!-- Messages will be loaded here -->
-        </div>
-
-        <div id="conversationsList" class="conversations-list">
-            <!-- Conversations will be loaded here -->
-        </div>
-
-        <input type="text" id="messageInput" placeholder="Type a message..." />
-        <button id="sendBtn">Send</button>
-        <input type="text" id="searchInput" placeholder="Search conversations..." />
 
     <!-- Mobile sidebar overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay"></div>

@@ -125,7 +125,7 @@ def chat():
 
 
 
-@app.route('/api/online-users', methods=['GET'])
+@app.route('/onlineusers', methods=['GET'])
 def get_online_users_api():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -147,14 +147,14 @@ def get_online_users_api():
         return jsonify({'error': 'Failed to get online users'}), 500
 
 
-@app.route('/api/conversations', methods=['GET'])
+@app.route('/conversations', methods=['GET'])
 def get_conversations():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
     
     return jsonify([])
 
-@app.route('/api/messages', methods=['GET'])
+@app.route('/messages', methods=['GET'])
 def get_messages():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -163,7 +163,7 @@ def get_messages():
     # Return messages for the conversation
     return jsonify([])
 
-@app.route('/api/messages/send', methods=['POST'])
+@app.route('/messages/send', methods=['POST'])
 def send_message():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -176,7 +176,7 @@ def send_message():
     # Return the sent message data
     return jsonify({'success': True})
 
-@app.route('/api/files/upload', methods=['POST'])
+@app.route('/files/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -184,7 +184,7 @@ def upload_file():
     # Handle file upload
     return jsonify({'success': True, 'file_url': 'path/to/file'})
 
-@app.route('/api/user', methods=['GET'])
+@app.route('/user', methods=['GET'])
 def get_user():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401

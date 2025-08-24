@@ -34,25 +34,30 @@
   --input-height: 70px;
 }
 
-/* Dark theme colors */
-[data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
+body[data-theme="dark"] {
+  --bg-primary: #0f172a;      /* Dark navy */
+  --bg-secondary: #1e293b;   /* Sidebar */
+  --bg-tertiary: #334155;    /* Hover areas */
   --bg-chat: #0f172a;
-  
-  --text-primary: #f8fafc;
+
+  --text-primary: #f1f5f9;   /* Light text */
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  
-  --border-color: #334155;
-  --shadow-light: rgba(59, 130, 246, 0.15);
-  --shadow-medium: rgba(59, 130, 246, 0.25);
-  
-  --message-received-bg: #334155;
-  --message-received-text: #f8fafc;
-}
 
+  --border-color: #475569;
+
+  /* keep your existing ones */
+  --message-sent-bg: #2563eb;
+  --message-sent-text: #ffffff;
+  --primary-color: #3b82f6;
+  --primary-hover: #2563eb;
+  --accent-color: #22c55e;
+  --tertiary-color: #ef4444;
+  --secondary-color: #eab308;
+  --status-online: #22c55e;
+  --status-away: #facc15;
+  --status-offline: #6b7280;
+}
 
 
 /* Reset and base styles */
@@ -253,6 +258,14 @@ body {
 .conversation.active .conversation-info p,
 .conversation.active .time {
   color: white;
+}
+.online-users .user-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+.online-users .user-item:hover {
+  background-color: #f5f5f5;
 }
 
 .conversation .avatar {
