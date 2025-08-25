@@ -228,6 +228,66 @@ body {
 .search-box input::placeholder {
   color: var(--text-muted);
 }
+.online-users {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.user-item {
+  padding: 5px 10px;
+  margin: 2px 0;
+  background-color: #f8f9fa;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.user-item:hover {
+  background-color: #e9ecef;
+}
+
+.no-users-message, .error-message {
+  padding: 10px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.error-message {
+  color: #dc3545;
+}
+.online-users {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.user-item {
+    padding: 5px 10px;
+    margin: 2px 0;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.user-item:hover {
+    background-color: #e9ecef;
+}
+
+.no-users-message, .error-message {
+    padding: 10px;
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+.error-message {
+    color: #dc3545;
+}
 
 /* Conversations list */
 .conversations {

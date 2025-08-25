@@ -7,20 +7,15 @@ import json
 import os
 import threading
 
-# Remove the duplicate CORS line and fix it
 from flask_cors import CORS
+
+
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
+CORS(app, supports_credentials=True)
 
-# Fix CORS - remove duplicate and add support_credentials
-# Fix CORS - remove duplicate and add support_credentials
-CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:5500'],
-     supports_credentials=True,  # This is crucial for sessions
-     allow_headers=['Content-Type', 'Authorization'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-
-uri = "ws://localhost:9999"
+uri = "ws://127.0.0.1:9999"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 
 class PersistentWebSocketClient:
@@ -125,7 +120,7 @@ def chat():
 
 
 
-@app.route('/onlineusers', methods=['GET'])
+@app.route('/chat/onlineusers', methods=['GET'])
 def get_online_users_api():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
