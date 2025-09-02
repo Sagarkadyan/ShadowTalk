@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     let currentConversation = "default"; // fallback conversation id
 
-    // API config (NO /chat in baseUrl!)
     const backendConfig = {
         baseUrl: 'http://127.0.0.1:5000',
         endpoints: {
