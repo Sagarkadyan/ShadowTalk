@@ -1,23 +1,60 @@
 import asyncio
 import websockets
-from flask import Flask, render_template, request, jsonify, session, redirect
-from flask_cors import CORS
 import rsa
 import json
 import os
 import threading
-
-from flask_cors import CORS
-
-
-
-app = Flask(__name__)
-app.secret_key = os.urandom(24)
-CORS(app, supports_credentials=True)
+from rich.console import Console
+from rich.text import Text
+from rich.table import Table
+from colorama import Fore, Style, init
+from alive_progress import alive_bar
+import pyfiglet
+import time
 
 uri = "ws://127.0.0.1:9999"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 my_pub, my_priv = rsa.newkeys(512)
+init(autoreset=True)
+
+console = Console()
+
+
+def print_banner():
+    banner = r"""
+  _____ ___ __ __ ____ ___    _____  __   ____    _______   ____  _      __  _ 
+ / ___/|  T  T /    T|   \   /   \ |  T__T  T    |      T /    T| T    |  l/ ]
+(   \_ |  l  |Y  o  ||    \ Y     Y|  |  |  |    |      |Y  o  || |    |  ' / 
+ \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \ 
+ /  \ ||  |  ||  _  ||     ||     |l  `  '  !      |  |  |  _  ||     T|     Y
+ \    ||  |  ||  |  ||     |l     ! \      /       |  |  |  |  ||     ||  .  |
+  \___jl__j__jl__j__jl_____j \___/   \_/\_/        l__j  l__j__jl_____jl__j\_j
+                                                                              
+
+
+                 ENCRYPTED CYBERLINK — SHADOWTALK v1.0
+
+    """
+    
+    for line in banner.splitlines():
+        print(Fore.CYAN + Style.BRIGHT + line + Style.RESET_ALL)
+        time.sleep(0.05)
+print_banner()
+def initial():
+            print("What will you choose")
+            print("1. Register")
+            print("2. Login")
+            print("Press 1 or 2")
+            initial_input = int(input("ENTER"))
+            if initial_input == 1:
+                print("register")
+                register()
+            elif initial_input == 2:
+                print("login")
+            else:
+                print("Wrong input re enter choice")
+                initial()        
+initial()                
 with open("public.pem", "wb") as f:
     f.write(my_pub.save_pkcs1("PEM"))
 
@@ -73,13 +110,11 @@ class PersistentWebSocketClient:
 
 persistent_ws_client = PersistentWebSocketClient(uri)
 
-# Utility to run coroutines on the main loop safely
-def run_async(coro):
-    return asyncio.run_coroutine_threadsafe(coro, main_loop).result()
 
-@app.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    username = input("Enter you usename")
+    email = input("Enter your email")
+    password = input("Enter you password")
     firebase = {
         "type": "registration",
         "username": data.get('username'),
@@ -90,7 +125,6 @@ def register():
     run_async(persistent_ws_client.send(json.dumps(firebase)))
     return jsonify({'success': True, 'message': 'Registration request sent.'})
 
-@app.route('/login', methods=['POST'])
 def login():
     print("Incoming login request. Data:", request.json)
     data = request.json
@@ -116,7 +150,6 @@ def login():
     else:
         return jsonify({'success': False, 'error': f'Unexpected: {answer}'}), 500
 
-@app.route('/chat', methods=['GET'])
 def chat():
     if 'username' not in session:   # protect the route
         return redirect('/')
@@ -126,7 +159,6 @@ def chat():
 
 
 
-@app.route('/chat/onlineusers', methods=['GET'])
 def get_online_users_api():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -148,14 +180,12 @@ def get_online_users_api():
         return jsonify({'error': 'Failed to get online users'}), 500
 
 
-@app.route('/conversations', methods=['GET'])
 def get_conversations():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
     
     return jsonify([])
 
-@app.route('/messages', methods=['GET'])
 def get_messages():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -164,7 +194,6 @@ def get_messages():
     # Return messages for the conversation
     return jsonify([])
 
-@app.route('/messages/send', methods=['POST'])
 def send_message():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -177,7 +206,6 @@ def send_message():
     # Return the sent message data
     return jsonify({'success': True})
 
-@app.route('/files/upload', methods=['POST'])
 def upload_file():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -185,19 +213,15 @@ def upload_file():
     # Handle file upload
     return jsonify({'success': True, 'file_url': 'path/to/file'})
 
-@app.route('/user', methods=['GET'])
 def get_user():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
     
     return jsonify({'username': session['username']})
 
-@app.route('/')
 def home():
     return render_template('login.html')
 
-def start_flask():
-    app.run(debug=True, use_reloader=False)
 
 if __name__ == "__main__":
     # start websocket client inside the main loop
@@ -206,5 +230,3 @@ if __name__ == "__main__":
         loop.run_until_complete(persistent_ws_client.connect())
         loop.run_forever()
 
-    threading.Thread(target=start_loop, args=(main_loop,), daemon=True).start()
-    start_flask()
