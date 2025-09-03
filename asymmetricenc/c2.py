@@ -17,6 +17,12 @@ CORS(app, supports_credentials=True)
 
 uri = "ws://127.0.0.1:9999"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
+my_pub, my_priv = rsa.newkeys(512)
+with open("public.pem", "wb") as f:
+    f.write(my_pub.save_pkcs1("PEM"))
+
+with open("private.pem", "wb") as f:
+    f.write(my_priv.save_pkcs1("PEM"))
 
 class PersistentWebSocketClient:
     def __init__(self, uri):

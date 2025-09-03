@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='pyscript/core.css') }}">
+    <script type="module" src="{{ url_for('static', filename='pyscript/core.js') }}"></script>
+
 </head>
 <body data-theme="light">
 
@@ -152,7 +155,35 @@
             </div>
         </div>
     </div>
-
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <py-script>
+        from js import document, MutationObserver
+        
+        def toggle_placeholder(*args, **kwargs):
+            container = document.querySelector(".messages-container")
+            if not container:
+                return
+        
+            placeholder = container.querySelector(".empty-chat-placeholder")
+            if not placeholder:
+                return
+        
+            if container.querySelector(".message"):
+                placeholder.style.display = "none"
+            else:
+                placeholder.style.display = "flex"  # or "block" depending on your CSS
+        
+        # Run once at startup
+        toggle_placeholder()
+        
+        # Observe for DOM changes (new messages being added)
+        observer = MutationObserver(toggle_placeholder)
+        observer.observe(
+            document.querySelector(".messages-container"),
+            { "childList": True }
+        )
+        </py-script>
+        
+    
+    <py-script src="{{ url_for('static', filename='js/script.py') }}"></py-script>
 </body>
 </html>
