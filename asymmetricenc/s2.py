@@ -8,6 +8,7 @@ conns = sqlite3.connect('users.db' ,check_same_thread=False)
 cursor = conns.cursor()
 connected_users = {}  # {websocket: username}
 online_users = set()
+print("start")
 async def handler(websocket):
     print(f"A client connected from {websocket.remote_address}")
     try:
@@ -43,9 +44,13 @@ async def handler(websocket):
                         email = data.get('email')
                         password = data.get('password')
                         pub_key = data.get('pub_key')
-                        adder(username, email, password, pub_key)
+                        regr_ans=adder(username, email, password, pub_key)
                         print(f"[+] {username} registered successfully.")
-                        response_message = {"status": "success", "message": "user added"}
+                        response_message = {
+                            "type": "reg_ans",
+                            "answer": regr_ans,
+                            "username": username
+                        }
                     except Exception as e:
                         print(f" Error during registration processing: {e}")
                         response_message = {"status": "failed", "message": "user not registered"}
@@ -85,16 +90,25 @@ async def handler(websocket):
 
 def adder(name, email, password, cypher_text):
     try:
+        # Check if email already exists
+        cursor.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+        if cursor.fetchone():
+            print(f"Registration failed: email {email} already exists.")
+            return "no"
+
+        # If not found, insert new user
         cursor.execute(
             "INSERT INTO users (name, email, password, cypher_text) VALUES (?, ?, ?, ?)",
             (name, email, password, cypher_text)
         )
         conns.commit()
-        print("Inserted successfully!")
-        return "Inserted successfully!"
-    except sqlite3.IntegrityError:
-        return "Email already exists."
-        print("Email already exists.")
+        print("Inserted successfully")
+        return "yes"
+
+    except Exception as e:
+        print(f"Registration failed with error: {e}")
+        return "fail"
+
 def check_password(cursor, name, user_password):
     try:
         cursor.execute(
@@ -136,7 +150,7 @@ def update_pss(name, new_passwd):
 
 
 async def main():
-    async with websockets.serve(handler, "localhost", 9999):
+    async with websockets.serve(handler, "127.0.0.1", 9999):
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":

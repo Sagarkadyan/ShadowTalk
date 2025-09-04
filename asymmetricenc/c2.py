@@ -40,27 +40,10 @@ def print_banner():
         print(Fore.CYAN + Style.BRIGHT + line + Style.RESET_ALL)
         time.sleep(0.05)
 print_banner()
-def initial():
-            print("What will you choose")
-            print("1. Register")
-            print("2. Login")
-            print("Press 1 or 2")
-            initial_input = int(input("ENTER"))
-            if initial_input == 1:
-                print("register")
-                register()
-            elif initial_input == 2:
-                print("login")
-            else:
-                print("Wrong input re enter choice")
-                initial()        
-initial()                
-with open("public.pem", "wb") as f:
-    f.write(my_pub.save_pkcs1("PEM"))
+def run_async(coro):
+    return asyncio.get_event_loop().run_until_complete(coro)
 
-with open("private.pem", "wb") as f:
-    f.write(my_priv.save_pkcs1("PEM"))
-
+current_user= None
 class PersistentWebSocketClient:
     def __init__(self, uri):
         self.uri = uri
@@ -112,43 +95,60 @@ persistent_ws_client = PersistentWebSocketClient(uri)
 
 
 def register():
+
     username = input("Enter you usename")
     email = input("Enter your email")
     password = input("Enter you password")
     firebase = {
         "type": "registration",
-        "username": data.get('username'),
-        "email": data.get('email'),
-        "password": data.get('password'),
+        "username": username,
+        "email": email,
+        "password": password,
         "pub_key": my_pub.save_pkcs1("PEM").decode('utf-8')
     }
-    run_async(persistent_ws_client.send(json.dumps(firebase)))
-    return jsonify({'success': True, 'message': 'Registration request sent.'})
+    print(firebase)
+    response_raw = run_async(persistent_ws_client.send_and_wait_response(json.dumps(firebase)))
+
+    response= json.loads(response_raw)
+    answer= response.get("answer")
+    if answer == "yes":
+        print("Registration done")
+        print("you can login now ")
+        login()
+    elif answer == "no":
+        print("email aleady taken  ")
+        register()    
+    else:
+        print("eistraion failde retry ")
+        register()    
 
 def login():
-    print("Incoming login request. Data:", request.json)
-    data = request.json
+    print("Incoming login ")
+    username = input("enter yout username")
+    password = input ("enter your password")
+    
     fireball = {
         "type": "login",
-        "username": data.get('username1'),
-        "password": data.get('password1')
+        "username": username,
+        "password": password
     }
 
     response_raw = run_async(persistent_ws_client.send_and_wait_response(json.dumps(fireball)))
     print(f"WebSocket response_raw: {response_raw}")
     response = json.loads(response_raw)
     answer = response.get("answer")
-    username = response.get("username")
+   
 
     if answer == "correct pass":
-        session['username'] = username
-        return jsonify({'success': True, 'redirect': '/chat'})
+        global current_user
+        current_user = username
+        
     elif answer == "wrong pass":
-        return jsonify({'success': False, 'error': 'Wrong password'}), 401
+        print("wrong password")
     elif answer == "user not found":
-        return jsonify({'success': False, 'error': 'Invalid username'}), 404
+        print("user not found")
     else:
-        return jsonify({'success': False, 'error': f'Unexpected: {answer}'}), 500
+        return {'success': False, 'error': f'Unexpected: {answer}'}
 
 def chat():
     if 'username' not in session:   # protect the route
@@ -222,11 +222,31 @@ def get_user():
 def home():
     return render_template('login.html')
 
+def initial():
+            run_async(persistent_ws_client.connect())
+            print("What will you choose")
+            print("1. Register")
+            print("2. Login")
+            print("Press 1 or 2")
+            initial_input = int(input("ENTER"))
+            if initial_input == 1:
+                print("register")
+                register()
+            elif initial_input == 2:
+                print("login")
+                login()
+            else:
+                print("Wrong input re enter choice")
+                initial()        
+initial()                
+with open("public.pem", "wb") as f:
+    f.write(my_pub.save_pkcs1("PEM"))
+
+with open("private.pem", "wb") as f:
+    f.write(my_priv.save_pkcs1("PEM"))
+
 
 if __name__ == "__main__":
-    # start websocket client inside the main loop
-    def start_loop(loop):
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(persistent_ws_client.connect())
-        loop.run_forever()
-
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(persistent_ws_client.connect())
+    initial()
