@@ -1,0 +1,69 @@
+/* Main Layout */
+#main {
+    align: center middle;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    background: #2c2c2c;
+    color: #a0a0a0;
+    width: 20%;
+    height: 100%;
+    padding: 1;
+    border-right: thick $accent;
+}
+
+#sidebar-title {
+    text-align: center;
+    text-style: bold;
+    height: 3;
+    border-bottom: heavy $secondary;
+}
+
+/* Chat Area Styling */
+#chat {
+    width: 80%;
+    height: 100%;
+    layout: vertical;
+}
+
+#chat-title {
+    background: #3c3c3c;
+    height: 3;
+    text-align: center;
+    text-style: bold;
+    border-bottom: heavy $secondary;
+}
+
+#chat-messages {
+    background: #1c1c1c;
+    height: 1fr;
+    padding: 1;
+}
+
+/* Bottom Bar and Input Styling */
+#bottom-bar {
+    width: 100%;
+    height: 3;
+    background: #3c3c3c;
+    border-top: heavy $secondary;
+    padding: 0 1;
+    align: middle right; /* This aligns content to the right */
+}
+
+#chat-input {
+    width: 1fr; /* Take up all available space */
+    margin-right: 1;
+}
+
+/* Button Styling */
+.chat-btn {
+    width: 5;
+    height: 100%;
+    margin-left: 1;
+}
+
+#send-btn {
+    width: 5;
+    height: 100%;
+}

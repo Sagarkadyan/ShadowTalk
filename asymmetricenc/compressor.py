@@ -1,15 +1,26 @@
-import requests
+from textual import events, on
+from textual.app import App, ComposeResult
+from textual.containers import Container
+from textual.css.query import NoMatches
+from textual.reactive import var
+from textual.widgets import Button, Digits, Label 
+ 
 
-# Create a session object
-session = requests.Session()
+class shadowtalk(App):
+    def compose(self) -> None:
+        with Container(id="shadowalk"):
 
-# Log in and maintain the session automatically
-login_url = "http://10.201.110.70/"
-credentials = {"username": "note", "password": passwd}
-for i in 
-response = session.post(login_url, data=credentials)
+            yield Button("SEND")
+            yield Button("message")
+            yield Label("Commands")
+            yield LAbel("Chats")
+            yield Button("")
+            yield Button("➣")
 
-if "Welcome" in response.text:
-    print("[+] Login successful. Session cookies are stored automatically!")
-else:
-    print("[-] Login failed.")
+
+
+
+
+
+if __name__ == "__main__":
+    shadowtalk().run()    
