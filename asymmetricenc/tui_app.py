@@ -31,15 +31,29 @@ class ChatApp(App):
             yield Button("⌂", id="upload-btn", classes="chat-btn")
             yield Button("Send", id="send-btn", classes="chat-btn")
 
+    def on_mount(self) -> None:
+        """Focus the input when the app starts."""
+        self.query_one("#chat-input", Input).focus()
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle send button press."""
         if event.button.id == "send-btn":
-            input_box = self.query_one("#chat-input", Input)
-            text = input_box.value.strip()
-            if text:
-                log = self.query_one("#messages", ScrollableContainer)
-                log.mount(Static(f"[b]You:[/b] {text}", classes="msg self"))
-                input_box.value = ""
-                log.scroll_end(animate=False)
+            self.process_message()
+
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle enter key press in input."""
+        self.process_message()
+
+    def process_message(self) -> None:
+        """Get text from input, post it to the log, and clear the input."""
+        input_box = self.query_one("#chat-input", Input)
+        text = input_box.value.strip()
+        if text:
+            log = self.query_one("#messages", ScrollableContainer)
+            log.mount(Static(f"[b]You:[/b] {text}", classes="msg self"))
+            input_box.value = ""
+            log.scroll_end(animate=False)
+        input_box.focus()
 
 
 if __name__ == "__main__":

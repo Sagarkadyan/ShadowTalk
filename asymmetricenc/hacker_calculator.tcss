@@ -1,0 +1,95 @@
+/* 
+ * Hacker Terminal Calculator Theme
+ * Inspired by your "modern dark UI" and "cybernetic look" description.
+ */
+
+/* General App Styling */
+Screen {
+    background: black;
+    color: #E0E0E0; /* Light grey for general text */
+    overflow: auto;
+}
+
+/* Header Styling */
+Header {
+    background: #1A1A1A;
+    border: tall red; /* Simulates the thick red border */
+}
+
+/* Calculator Layout */
+#calculator {
+    layout: grid;
+    grid-size: 4;
+    grid-gutter: 1 2;
+    grid-columns: 1fr;
+    grid-rows: 2fr 1fr 1fr 1fr 1fr 1fr; /* Display + 5 rows of buttons */
+    margin: 1 2;
+    min-height: 25;
+    min-width: 26;
+    height: 100%;
+}
+
+#calculator.inline {
+    margin: 0 2;
+}
+
+/* Calculator Display */
+#numbers {
+    column-span: 4;
+    padding: 0 1;
+    height: 100%;
+    background: #1A1A1A; /* Dark panel, same as header */
+    color: white;
+    content-align: center middle;
+    text-align: right;
+    border: solid red;
+}
+
+/* Default Button Styling */
+Button {
+    width: 100%;
+    height: 100%;
+    background: #2A2A2A; /* Dark background */
+    border: solid red;
+}
+
+/* Button Hover State */
+Button:hover {
+    background: #4A4A4A; /* Lighter background on hover */
+    color: white;       /* Text becomes pure white */
+    border: solid white;/* Border becomes pure white */
+}
+
+/* Special styling for operator buttons (+, -, etc.) */
+.operator {
+    background: #400000; /* Dark red background */
+    color: red;
+}
+
+.operator:hover {
+    background: red;
+    color: white;
+    border: solid white;
+}
+
+/* Special styling for the 'equals' button */
+#equals {
+    background: red;
+    color: white;
+}
+
+#equals:hover {
+    background: #FF4D4D; /* Lighter red on hover */
+    border: solid white;
+}
+
+/* Special styling for function buttons (e.g., 'C') */
+.function {
+    color: red;
+}
+
+.function:hover {
+    background: #4A4A4A;
+    color: white;
+    border: solid white;
+}
