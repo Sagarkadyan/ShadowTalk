@@ -6,6 +6,18 @@ import sqlite3
 # Connect (creates the database file if it doesn't exist)
 conns = sqlite3.connect('users.db' ,check_same_thread=False)
 cursor = conns.cursor()
+
+# Create users table if it doesn't exist
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL,
+    cypher_text TEXT NOT NULL
+);
+""")
+conns.commit()
 connected_users = {}  # {websocket: username}
 online_users = set()
 print("start")
@@ -61,9 +73,6 @@ async def handler(websocket):
                         "users": list(online_users),
                         "count": len(online_users)
                     }
-                elif data.get("type") == "ping":
-                    response_message = {"type": "pong"}
-
                 else:
                     response_message = {"status": "ignored", "message": "Message type not recognized."}
 
@@ -96,7 +105,7 @@ def adder(name, email, password, cypher_text):
             print(f"Registration failed: email {email} already exists.")
             return "no"
 
-        # If not found, insert new user
+        
         cursor.execute(
             "INSERT INTO users (name, email, password, cypher_text) VALUES (?, ?, ?, ?)",
             (name, email, password, cypher_text)

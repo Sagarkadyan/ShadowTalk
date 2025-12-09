@@ -8,7 +8,8 @@ from rich.console import Console
 from rich.text import Text
 from rich.table import Table
 from colorama import Fore, Style, init
-from alive_progress import alive_bar
+
+
 import pyfiglet
 import time
 
@@ -25,21 +26,19 @@ def print_banner():
   _____ ___ __ __ ____ ___    _____  __   ____    _______   ____  _      __  _ 
  / ___/|  T  T /    T|   \   /   \ |  T__T  T    |      T /    T| T    |  l/ ]
 (   \_ |  l  |Y  o  ||    \ Y     Y|  |  |  |    |      |Y  o  || |    |  ' / 
- \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \ 
+ \__  T|  _  ||     ||  D  Y|  O  ||  |  |  |    l_j  l_j|     || l___ |    \  
  /  \ ||  |  ||  _  ||     ||     |l  `  '  !      |  |  |  _  ||     T|     Y
  \    ||  |  ||  |  ||     |l     ! \      /       |  |  |  |  ||     ||  .  |
   \___jl__j__jl__j__jl_____j \___/   \_/\_/        l__j  l__j__jl_____jl__j\_j
                                                                               
 
 
-                 ENCRYPTED CYBERLINK — SHADOWTALK v1.0
-
     """
     
     for line in banner.splitlines():
         print(Fore.CYAN + Style.BRIGHT + line + Style.RESET_ALL)
         time.sleep(0.05)
-print_banner()
+#print_banner()
 def run_async(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
@@ -51,18 +50,14 @@ class PersistentWebSocketClient:
         self.response_queue = asyncio.Queue()
 
     async def connect(self):
-        self.websocket = await websockets.connect(self.uri)
+        self.websocket = await websockets.connect(self.uri, ping_interval=10)
         print("Connected to WebSocket server.")
         asyncio.create_task(self.listen())
-        asyncio.create_task(self.keepalive())
 
     async def listen(self):
         try:
             async for message in self.websocket:
                 print(f"Received from server: {message}")
-                data = json.loads(message)
-                if data.get("type") == "pong":
-                    continue
                 await self.response_queue.put(message)
         except websockets.exceptions.ConnectionClosed:
             print("WebSocket connection closed.")
@@ -116,15 +111,15 @@ def register():
         print("you can login now ")
         login()
     elif answer == "no":
-        print("email aleady taken  ")
+        print("email already taken  ")
         register()    
     else:
-        print("eistraion failde retry ")
+        print("registration failed retry ")
         register()    
 
 def login():
     print("Incoming login ")
-    username = input("enter yout username")
+    username = input("enter your username")
     password = input ("enter your password")
     
     fireball = {
@@ -142,6 +137,8 @@ def login():
     if answer == "correct pass":
         global current_user
         current_user = username
+        print(get_online_users_api())
+
         
     elif answer == "wrong pass":
         print("wrong password")
@@ -149,11 +146,6 @@ def login():
         print("user not found")
     else:
         return {'success': False, 'error': f'Unexpected: {answer}'}
-
-def chat():
-    if 'username' not in session:   # protect the route
-        return redirect('/')
-    return render_template('fchat.html', username=session['username'])
 
 
 
@@ -206,6 +198,8 @@ def send_message():
     # Return the sent message data
     return jsonify({'success': True})
 
+
+
 def upload_file():
     if 'username' not in session:
         return jsonify({'error': 'Not authenticated'}), 401
@@ -238,6 +232,17 @@ def initial():
             else:
                 print("Wrong input re enter choice")
                 initial()        
+initial()                
+with open("public.pem", "wb") as f:
+    f.write(my_pub.save_pkcs1("PEM"))
+
+with open("private.pem", "wb") as f:
+    f.write(my_priv.save_pkcs1("PEM"))
+
+
+
+
+
 initial()                
 with open("public.pem", "wb") as f:
     f.write(my_pub.save_pkcs1("PEM"))

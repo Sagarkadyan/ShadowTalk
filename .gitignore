@@ -2,3 +2,4 @@ private.pem
 api.py
 asymmetricenc/package.json
 asymmetricenc/package-lock.json
+asymmetricenc/public.pem
