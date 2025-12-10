@@ -8,8 +8,6 @@ from rich.console import Console
 from rich.text import Text
 from rich.table import Table
 from colorama import Fore, Style, init
-
-
 import pyfiglet
 import time
 
@@ -138,22 +136,25 @@ def login():
         global current_user
         current_user = username
         print(get_online_users_api())
-
+        user_select()
         
     elif answer == "wrong pass":
         print("wrong password")
+        login()
     elif answer == "user not found":
         print("user not found")
+        login()
     else:
         return {'success': False, 'error': f'Unexpected: {answer}'}
 
 
 
-
+def user_select():
+    user=input("enter the name of user you want to chat")        
 
 def get_online_users_api():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
     try:
         request_data = {"type": "get_online_users"}
@@ -161,60 +162,61 @@ def get_online_users_api():
         response = json.loads(response_raw)
         
         if response.get("type") == "online_users_list":
-            return jsonify({
+            return {
                 'users': response.get('users', []),
                 'count': response.get('count', 0)
-            })
+            }
         else:
-            return jsonify({'users': [], 'count': 0})
+            return {'users': [], 'count': 0}
     except Exception as e:
         print(f"Error getting online users: {e}")
-        return jsonify({'error': 'Failed to get online users'}), 500
+        return {'error': 'Failed to get online users'}
 
 
 def get_conversations():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
-    return jsonify([])
+    return []
 
 def get_messages():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
-    conversation_id = request.args.get('conversation_id')
+    # conversation_id = request.args.get('conversation_id') # 'request' is not defined in this CLI context
     # Return messages for the conversation
-    return jsonify([])
+    return []
 
 def send_message():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
-    data = request.get_json()
-    message = data.get('message')
-    conversation_id = data.get('conversation_id')
+    # data = request.get_json() # 'request' is not defined in this CLI context
+    # message = data.get('message')
+    # conversation_id = data.get('conversation_id')
     
     # Process and send message via WebSocket
     # Return the sent message data
-    return jsonify({'success': True})
+    return {'success': True}
 
 
 
 def upload_file():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
     # Handle file upload
-    return jsonify({'success': True, 'file_url': 'path/to/file'})
+    return {'success': True, 'file_url': 'path/to/file'}
 
 def get_user():
-    if 'username' not in session:
-        return jsonify({'error': 'Not authenticated'}), 401
+    if current_user is None:
+        return {'error': 'Not authenticated'}
     
-    return jsonify({'username': session['username']})
+    return {'username': current_user}
 
 def home():
-    return render_template('login.html')
+    # return render_template('login.html') # 'render_template' is not defined in this CLI context
+    pass
 
 def initial():
             run_async(persistent_ws_client.connect())
