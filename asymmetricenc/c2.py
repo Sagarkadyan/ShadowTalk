@@ -17,7 +17,7 @@ my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)
 
 console = Console()
-
+    
 
 def print_banner():
     banner = r"""
@@ -151,7 +151,7 @@ def login():
 
 def user_select():
     user=input("enter the name of user you want to chat")        
-
+    
 def get_online_users_api():
     if current_user is None:
         return {'error': 'Not authenticated'}
