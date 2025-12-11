@@ -1,5 +1,6 @@
 from pynput import keyboard
 i=0
+#can be user as keylogger
 def on_press(key):
     global i
     try:
