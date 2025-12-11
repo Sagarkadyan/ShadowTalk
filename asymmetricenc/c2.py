@@ -161,7 +161,17 @@ def user_select():
         if selected_user in users:
             print("user found")  
             global selected_user
-
+            chatting()
+def chatting():
+        while True :
+            message=input("")
+            message_ball={
+                'type':message,
+                'receiver':selected_user,
+                'message':message
+            }
+            response_raw=run_async(persistent_ws_client.send_and_wait_response(json.dumps(message_ball))
+            print(response_raw)
 
     
 def get_online_users_api():
@@ -199,13 +209,9 @@ def get_messages():
     # Return messages for the conversation
     return []
 
-def send_message(message):
-    if current_user is None:
-        return {'error': 'Not authenticated'}
-    
-    else:
-        
-        
+
+
+
 
 
 def upload_file():
