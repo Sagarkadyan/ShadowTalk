@@ -10,14 +10,15 @@ from rich.table import Table
 from colorama import Fore, Style, init
 import pyfiglet
 import time
-
+from pynput import keyboard
+i=0
 uri = "ws://127.0.0.1:9999"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)
 
 console = Console()
-    
+selected_user=""
 
 def print_banner():
     banner = r"""
@@ -150,7 +151,18 @@ def login():
 
 
 def user_select():
-    user=input("enter the name of user you want to chat")        
+        users_raw=get_online_users_api()
+        users = users_raw['users']
+        print("list of users",users)
+
+        
+        
+        selected_user=input("select the person you want to chat")
+        if selected_user in users:
+            print("user found")  
+            global selected_user
+
+
     
 def get_online_users_api():
     if current_user is None:
@@ -187,18 +199,13 @@ def get_messages():
     # Return messages for the conversation
     return []
 
-def send_message():
+def send_message(message):
     if current_user is None:
         return {'error': 'Not authenticated'}
     
-    # data = request.get_json() # 'request' is not defined in this CLI context
-    # message = data.get('message')
-    # conversation_id = data.get('conversation_id')
-    
-    # Process and send message via WebSocket
-    # Return the sent message data
-    return {'success': True}
-
+    else:
+        
+        
 
 
 def upload_file():
@@ -217,43 +224,79 @@ def get_user():
 def home():
     # return render_template('login.html') # 'render_template' is not defined in this CLI context
     pass
+def on_press(key):
+    global i
+    try:
+        # print('alphanumeric key {0} pressed'.format(key.char))
+        b=key.char
+        if b=="/":
+            # print("command is starting")
+            i+=1
+            
+            if i>1:
+                # print("command is perfect")
+                user_select()
+                i=0
+            else:
+                # print("value need more ")
+                pass
+                
+        else:
+            if i>0:
+                i=0
+                # print("value reset")           
+
+
+    except AttributeError:
+        # print('special key {0} pressed'.format(key))
+        pass
+
+def on_release(key):
+    # print('{0} released'.format(key))
+    if key == keyboard.Key.esc:
+        # Stop listener
+        return False
 
 def initial():
-            run_async(persistent_ws_client.connect())
+            print_banner()
             print("What will you choose")
             print("1. Register")
             print("2. Login")
             print("Press 1 or 2")
-            initial_input = int(input("ENTER"))
-            if initial_input == 1:
-                print("register")
-                register()
-            elif initial_input == 2:
-                print("login")
-                login()
-            else:
-                print("Wrong input re enter choice")
-                initial()        
-initial()                
-with open("public.pem", "wb") as f:
-    f.write(my_pub.save_pkcs1("PEM"))
-
-with open("private.pem", "wb") as f:
-    f.write(my_priv.save_pkcs1("PEM"))
-
-
-
-
-
-initial()                
-with open("public.pem", "wb") as f:
-    f.write(my_pub.save_pkcs1("PEM"))
-
-with open("private.pem", "wb") as f:
-    f.write(my_priv.save_pkcs1("PEM"))
-
+            try:
+                initial_input = int(input("ENTER: "))
+                if initial_input == 1:
+                    print("register")
+                    register()
+                elif initial_input == 2:
+                    print("login")
+                    login()
+                else:
+                    print("Wrong input, re-enter choice")
+                    initial()
+            except ValueError:
+                print("Invalid input. Please enter 1 or 2.")
+                initial()
 
 if __name__ == "__main__":
+    # Start key listener in a non-blocking way
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release)
+    listener.start()
+
+    with open("public.pem", "wb") as f:
+        f.write(my_pub.save_pkcs1("PEM"))
+
+    with open("private.pem", "wb") as f:
+        f.write(my_priv.save_pkcs1("PEM"))
+
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(persistent_ws_client.connect())
-    initial()
+    try:
+        loop.run_until_complete(persistent_ws_client.connect())
+        initial()
+    except KeyboardInterrupt:
+        print("\nExiting...")
+    finally:
+        listener.stop()
+

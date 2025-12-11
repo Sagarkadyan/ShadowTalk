@@ -1,23 +1,25 @@
 from pynput import keyboard
 i=0
-#can be user as keylogger
+#can be used as keylogger
 def on_press(key):
     global i
     try:
         # print('alphanumeric key {0} pressed'.format(key.char))
         b=key.char
         if b=="/":
-            print("hiii")
+            print("command is starting")
             i+=1
             
             if i>1:
-                print("si")
+                print("command is perfect")
                 i=0
             else:
-                print("io")
+                print("value need more ")
                 
         else:
-            print("hh")            
+            if i>0:
+                i=0
+                print("value reset")           
 
 
     except AttributeError:
