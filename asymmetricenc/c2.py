@@ -12,7 +12,7 @@ import pyfiglet
 import time
 from pynput import keyboard
 i=0
-uri = "ws://ready-lebanon.gl.at.ply.gg:24179"
+uri = ""
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)

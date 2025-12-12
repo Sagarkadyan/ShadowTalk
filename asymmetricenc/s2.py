@@ -193,7 +193,7 @@ def update_pss(name, new_passwd):
 
 
 async def main():
-    async with websockets.serve(handler, "ready-lebanon.gl.at.ply.gg", 24179):
+    async with websockets.serve(handler, ""):
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":
