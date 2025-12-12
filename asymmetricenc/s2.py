@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import json
 import sqlite3
-
+import time 
 # Connect (creates the database file if it doesn't exist)
 conns = sqlite3.connect('users.db' ,check_same_thread=False)
 cursor = conns.cursor()
@@ -21,6 +21,9 @@ conns.commit()
 connected_users = {}  # {websocket: username}
 online_users = set()
 print("start")
+while True:
+    print(online_users)
+    time.sleep(10)
 async def handler(websocket):
     print(f"A client connected from {websocket.remote_address}")
     try:
@@ -67,12 +70,43 @@ async def handler(websocket):
                         print(f" Error during registration processing: {e}")
                         response_message = {"status": "failed", "message": "user not registered"}
                 elif data.get("type") == "get_online_users":
-                    
                     response_message = {
                         "type": "online_users_list",
                         "users": list(online_users),
                         "count": len(online_users)
                     }
+                # The client may send the message content as the type, so we can't just check for "message".
+                # Instead, we'll assume if a "receiver" is present, it's a message to be forwarded.
+                elif data.get("receiver"):
+                    try:
+                        receiver_username = data.get('receiver')
+                        message_content = data.get('message')
+                        sender_username = connected_users.get(websocket)
+
+                        if not sender_username:
+                            response_message = {"status": "error", "message": "Sender not logged in."}
+                        else:
+                            # Find the recipient's websocket
+                            receiver_websocket = None
+                            for ws, user in connected_users.items():
+                                if user == receiver_username:
+                                    receiver_websocket = ws
+                                    break
+                            
+                            if receiver_websocket:
+                                # Forward the message to the recipient
+                                forward_message = {
+                                    "type": "private_message",
+                                    "sender": sender_username,
+                                    "message": message_content
+                                }
+                                await receiver_websocket.send(json.dumps(forward_message))
+                                # Send confirmation back to sender
+                                response_message = {"status": "ok", "message": "Message sent successfully."}
+                            else:
+                                response_message = {"status": "error", "message": f"User '{receiver_username}' is not online."}
+                    except Exception as e:
+                        response_message = {"status": "error", "message": f"Error processing message: {e}"}
                 else:
                     response_message = {"status": "ignored", "message": "Message type not recognized."}
 
@@ -159,7 +193,7 @@ def update_pss(name, new_passwd):
 
 
 async def main():
-    async with websockets.serve(handler, "127.0.0.1", 9999):
+    async with websockets.serve(handler, "ready-lebanon.gl.at.ply.gg", 24179):
         await asyncio.Future()  # Run forever
 
 if __name__ == "__main__":

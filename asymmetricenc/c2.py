@@ -12,7 +12,7 @@ import pyfiglet
 import time
 from pynput import keyboard
 i=0
-uri = "ws://127.0.0.1:9999"
+uri = "ws://ready-lebanon.gl.at.ply.gg:24179"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)
@@ -151,26 +151,31 @@ def login():
 
 
 def user_select():
+        global selected_user
         users_raw=get_online_users_api()
         users = users_raw['users']
         print("list of users",users)
 
         
         
-        selected_user=input("select the person you want to chat")
-        if selected_user in users:
-            print("user found")  
-            global selected_user
+        selected_user_input = input("select the person you want to chat")
+        if selected_user_input in users:
+            print("user found")
+            selected_user = selected_user_input
             chatting()
+        else:
+            print("User not found. Please try again.")
+            user_select()
+
 def chatting():
         while True :
             message=input("")
             message_ball={
-                'type':message,
+                'type':" message",
                 'receiver':selected_user,
                 'message':message
             }
-            response_raw=run_async(persistent_ws_client.send_and_wait_response(json.dumps(message_ball))
+            response_raw=run_async(persistent_ws_client.send_and_wait_response(json.dumps(message_ball)))
             print(response_raw)
 
     
