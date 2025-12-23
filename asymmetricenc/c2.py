@@ -12,7 +12,7 @@ import pyfiglet
 import time
 from pynput import keyboard
 i=0
-uri = ""
+uri = "ws://iyjr7jcamj.loclx.io"
 main_loop = asyncio.new_event_loop()  # global event loop for websocket
 my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)
@@ -49,9 +49,16 @@ class PersistentWebSocketClient:
         self.response_queue = asyncio.Queue()
 
     async def connect(self):
-        self.websocket = await websockets.connect(self.uri, ping_interval=10)
-        print("Connected to WebSocket server.")
-        asyncio.create_task(self.listen())
+        try:
+            self.websocket = await websockets.connect(self.uri, ping_interval=10, open_timeout=20)
+            print("Connected to WebSocket server.")
+            asyncio.create_task(self.listen())
+        except (asyncio.TimeoutError, websockets.exceptions.WebSocketException) as e:
+            print(f"Failed to connect to WebSocket server at {self.uri}: {e}")
+            self.websocket = None
+        except Exception as e:
+            print(f"An unexpected error occurred during connection: {e}")
+            self.websocket = None
 
     async def listen(self):
         try:
@@ -305,7 +312,10 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(persistent_ws_client.connect())
-        initial()
+        if persistent_ws_client.websocket:
+            initial()
+        else:
+            print("Could not connect to the server. Exiting.")
     except KeyboardInterrupt:
         print("\nExiting...")
     finally:
