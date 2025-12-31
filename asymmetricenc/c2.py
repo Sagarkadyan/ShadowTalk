@@ -10,15 +10,16 @@ from rich.table import Table
 from colorama import Fore, Style, init
 import pyfiglet
 import time
-from pynput import keyboard
-i=0
-uri = "ws://iyjr7jcamj.loclx.io"
-main_loop = asyncio.new_event_loop()  # global event loop for websocket
+
+uri = "ws://127.0.0.1:8080"
+main_loop = asyncio.new_event_loop()
+asyncio.set_event_loop(main_loop)
 my_pub, my_priv = rsa.newkeys(512)
 init(autoreset=True)
 
 console = Console()
 selected_user=""
+current_user= None
 
 def print_banner():
     banner = r"""
@@ -37,11 +38,10 @@ def print_banner():
     for line in banner.splitlines():
         print(Fore.CYAN + Style.BRIGHT + line + Style.RESET_ALL)
         time.sleep(0.05)
-#print_banner()
-def run_async(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
 
-current_user= None
+def run_async(coro):
+    return main_loop.run_until_complete(coro)
+
 class PersistentWebSocketClient:
     def __init__(self, uri):
         self.uri = uri
@@ -63,8 +63,16 @@ class PersistentWebSocketClient:
     async def listen(self):
         try:
             async for message in self.websocket:
-                print(f"Received from server: {message}")
-                await self.response_queue.put(message)
+                try:
+                    data = json.loads(message)
+                    if data.get("type") == "private_message":
+                        sender = data.get("sender", "Unknown")
+                        msg_text = data.get("message", "")
+                        console.print(f"\n[bold magenta]{sender}:[/bold magenta] {msg_text}")
+                    else:
+                        await self.response_queue.put(message)
+                except json.JSONDecodeError:
+                    console.print(f"[dim]Received non-JSON message from server: {message}[/dim]")
         except websockets.exceptions.ConnectionClosed:
             print("WebSocket connection closed.")
 
@@ -77,6 +85,7 @@ class PersistentWebSocketClient:
         await self.send(message)
         response = await self.response_queue.get()
         return response
+    
     async def keepalive(self, interval=30):
         """Send a ping every <interval> seconds to keep the connection alive."""
         try:
@@ -90,13 +99,10 @@ class PersistentWebSocketClient:
                 await asyncio.sleep(interval)
         except asyncio.CancelledError:
             print("Keepalive task cancelled")
-    
 
 persistent_ws_client = PersistentWebSocketClient(uri)
 
-
 def register():
-
     username = input("Enter you usename")
     email = input("Enter your email")
     password = input("Enter you password")
@@ -139,7 +145,6 @@ def login():
     response = json.loads(response_raw)
     answer = response.get("answer")
    
-
     if answer == "correct pass":
         global current_user
         current_user = username
@@ -152,40 +157,65 @@ def login():
     elif answer == "user not found":
         print("user not found")
         login()
+    elif answer == "already online":
+        print(f"User '{username}' is already logged in. Please try a different username.")
+        login()
     else:
         return {'success': False, 'error': f'Unexpected: {answer}'}
 
-
-
 def user_select():
-        global selected_user
-        users_raw=get_online_users_api()
-        users = users_raw['users']
-        print("list of users",users)
-
-        
-        
-        selected_user_input = input("select the person you want to chat")
-        if selected_user_input in users:
-            print("user found")
-            selected_user = selected_user_input
-            chatting()
-        else:
-            print("User not found. Please try again.")
-            user_select()
+    global selected_user, current_user
+    print("\nFetching online users...")
+    users_raw = get_online_users_api()
+    
+    available_users = [user for user in users_raw.get('users', []) if user != current_user]
+    
+    if not available_users:
+        print("No other users are currently online. Waiting for someone to connect...")
+        while not available_users:
+            try:
+                time.sleep(5)
+                print("Refreshing user list...")
+                users_raw = get_online_users_api()
+                available_users = [user for user in users_raw.get('users', []) if user != current_user]
+            except KeyboardInterrupt:
+                print("\nExiting.")
+                return
+    
+    print("Available users to chat with:", available_users)
+    
+    selected_user_input = input("Select the person you want to chat with: ")
+    if selected_user_input in available_users:
+        print(f"User '{selected_user_input}' found.")
+        selected_user = selected_user_input
+        chatting()
+    else:
+        print("User not found or is not available. Please try again.")
+        user_select()
 
 def chatting():
-        while True :
-            message=input("")
-            message_ball={
-                'type':" message",
-                'receiver':selected_user,
-                'message':message
+    console.print(f"\n[bold green]You are now chatting with {selected_user}. Press Ctrl+C to return to user selection.[/bold green]")
+    while True:
+        try:
+            message = input("")
+            if not message.strip():
+                continue
+            
+            message_ball = {
+                'type': "message",
+                'receiver': selected_user,
+                'message': message
             }
-            response_raw=run_async(persistent_ws_client.send_and_wait_response(json.dumps(message_ball)))
-            print(response_raw)
+            run_async(persistent_ws_client.send_and_wait_response(json.dumps(message_ball)))
 
-    
+        except KeyboardInterrupt:
+            console.print("\n[bold yellow]Leaving chat...[/bold yellow]")
+            user_select()
+            break
+        except Exception as e:
+            console.print(f"[bold red]An error occurred: {e}[/bold red]")
+            break
+
 def get_online_users_api():
     if current_user is None:
         return {'error': 'Not authenticated'}
@@ -206,110 +236,35 @@ def get_online_users_api():
         print(f"Error getting online users: {e}")
         return {'error': 'Failed to get online users'}
 
-
-def get_conversations():
-    if current_user is None:
-        return {'error': 'Not authenticated'}
-    
-    return []
-
-def get_messages():
-    if current_user is None:
-        return {'error': 'Not authenticated'}
-    
-    # conversation_id = request.args.get('conversation_id') # 'request' is not defined in this CLI context
-    # Return messages for the conversation
-    return []
-
-
-
-
-
-
-def upload_file():
-    if current_user is None:
-        return {'error': 'Not authenticated'}
-    
-    # Handle file upload
-    return {'success': True, 'file_url': 'path/to/file'}
-
-def get_user():
-    if current_user is None:
-        return {'error': 'Not authenticated'}
-    
-    return {'username': current_user}
-
-def home():
-    # return render_template('login.html') # 'render_template' is not defined in this CLI context
-    pass
-def on_press(key):
-    global i
-    try:
-        # print('alphanumeric key {0} pressed'.format(key.char))
-        b=key.char
-        if b=="/":
-            # print("command is starting")
-            i+=1
-            
-            if i>1:
-                # print("command is perfect")
-                user_select()
-                i=0
-            else:
-                # print("value need more ")
-                pass
-                
-        else:
-            if i>0:
-                i=0
-                # print("value reset")           
-
-
-    except AttributeError:
-        # print('special key {0} pressed'.format(key))
-        pass
-
-def on_release(key):
-    # print('{0} released'.format(key))
-    if key == keyboard.Key.esc:
-        # Stop listener
-        return False
-
 def initial():
-            print_banner()
-            print("What will you choose")
-            print("1. Register")
-            print("2. Login")
-            print("Press 1 or 2")
-            try:
-                initial_input = int(input("ENTER: "))
-                if initial_input == 1:
-                    print("register")
-                    register()
-                elif initial_input == 2:
-                    print("login")
-                    login()
-                else:
-                    print("Wrong input, re-enter choice")
-                    initial()
-            except ValueError:
-                print("Invalid input. Please enter 1 or 2.")
-                initial()
+    print_banner()
+    print("What will you choose")
+    print("1. Register")
+    print("2. Login")
+    print("Press 1 or 2")
+    try:
+        initial_input = int(input("ENTER: "))
+        if initial_input == 1:
+            print("register")
+            register()
+        elif initial_input == 2:
+            print("login")
+            login()
+        else:
+            print("Wrong input, re-enter choice")
+            initial()
+    except ValueError:
+        print("Invalid input. Please enter 1 or 2.")
+        initial()
 
 if __name__ == "__main__":
-    # Start key listener in a non-blocking way
-    listener = keyboard.Listener(
-        on_press=on_press,
-        on_release=on_release)
-    listener.start()
-
     with open("public.pem", "wb") as f:
         f.write(my_pub.save_pkcs1("PEM"))
 
     with open("private.pem", "wb") as f:
         f.write(my_priv.save_pkcs1("PEM"))
 
-    loop = asyncio.get_event_loop()
+    loop = main_loop
     try:
         loop.run_until_complete(persistent_ws_client.connect())
         if persistent_ws_client.websocket:
@@ -318,6 +273,3 @@ if __name__ == "__main__":
             print("Could not connect to the server. Exiting.")
     except KeyboardInterrupt:
         print("\nExiting...")
-    finally:
-        listener.stop()
-

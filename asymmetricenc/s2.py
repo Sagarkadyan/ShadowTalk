@@ -21,9 +21,55 @@ conns.commit()
 connected_users = {}  # {websocket: username}
 online_users = set()
 print("start")
-while True:
-    print(online_users)
-    time.sleep(10)
+class PersistentWebSocketClient:
+    def __init__(self, uri):
+        self.uri = uri
+        self.websocket = None
+        self.response_queue = asyncio.Queue()
+
+    async def connect(self):
+        try:
+            self.websocket = await websockets.connect(self.uri, ping_interval=10, open_timeout=20)
+            print("Connected to WebSocket server.")
+            asyncio.create_task(self.listen())
+        except (asyncio.TimeoutError, websockets.exceptions.WebSocketException) as e:
+            print(f"Failed to connect to WebSocket server at {self.uri}: {e}")
+            self.websocket = None
+        except Exception as e:
+            print(f"An unexpected error occurred during connection: {e}")
+            self.websocket = None
+
+    async def listen(self):
+        try:
+            async for message in self.websocket:
+                print(f"Received from server: {message}")
+                await self.response_queue.put(message)
+        except websockets.exceptions.ConnectionClosed:
+            print("WebSocket connection closed.")
+
+    async def send(self, message):
+        if self.websocket is None:
+            raise ConnectionError("WebSocket is not connected.")
+        await self.websocket.send(message)
+
+    async def send_and_wait_response(self, message):
+        await self.send(message)
+        response = await self.response_queue.get()
+        return response
+    async def keepalive(self, interval=30):
+        """Send a ping every <interval> seconds to keep the connection alive."""
+        try:
+            while True:
+                if self.websocket:
+                    try:
+                        await self.websocket.send(json.dumps({"type": "ping"}))
+                        print("Ping sent to server")
+                    except Exception as e:
+                        print("Ping failed:", e)
+                await asyncio.sleep(interval)
+        except asyncio.CancelledError:
+            print("Keepalive task cancelled")
+ 
 async def handler(websocket):
     print(f"A client connected from {websocket.remote_address}")
     try:
@@ -38,7 +84,12 @@ async def handler(websocket):
                     try:
                         username = data.get("username")
                         password = data.get("password")
-                        passwd_result = check_password(cursor, username, password)
+
+                        if username in online_users:
+                            passwd_result = "already online"
+                        else:
+                            passwd_result = check_password(cursor, username, password)
+
                         if passwd_result == "correct pass":
                             connected_users[websocket] = username
                             online_users.add(username)
@@ -66,6 +117,8 @@ async def handler(websocket):
                             "answer": regr_ans,
                             "username": username
                         }
+                
+
                     except Exception as e:
                         print(f" Error during registration processing: {e}")
                         response_message = {"status": "failed", "message": "user not registered"}
